@@ -18,7 +18,8 @@ using namespace std;
 
 Odometry::Odometry()
 {
-  m_first_reading = false;
+  m_first_reading_x = false;
+  m_first_reading_y = false;
   m_previous_x = 0;
   m_previous_y = 0;
   m_total_distance = 0;
@@ -50,14 +51,24 @@ bool Odometry::OnNewMail(MOOSMSG_LIST &NewMail)
   for(p=NewMail.begin(); p!=NewMail.end(); p++) {
     CMOOSMsg &msg = *p;
 
+    //If a message with key NAV_X is recieved, update the current x- position.
+    //If it is the first message read by the Odometry app, update m_previous_x 
+    //to describe the starting position. Set m_first_reading_x to true, //indicating that the startingposition is set. 
+
     if (msg.GetKey() == "NAV_X"){
       m_current_x = msg.GetDouble();
-      m_first_reading = true;
+      if (m_first_reading_x == false){
+        m_previous_x = msg.GetDouble();
+        m_first_reading_x = true;
+      }
     }
 
     if (msg.GetKey() == "NAV_Y"){
       m_current_y = msg.GetDouble();
-      m_first_reading = true;
+      if(m_first_reading_y == false){
+        m_previous_y = msg.GetDouble();
+        m_first_reading_y = true;
+      }
     }
   }
   return(true);
@@ -80,18 +91,26 @@ bool Odometry::OnConnectToServer()
 
 bool Odometry::Iterate()
 {
+  //Call AppCast function iterate()
   AppCastingMOOSApp::Iterate();
-  if (m_first_reading == true){
+
+  // Only start iterating when m_first_reading_x = true or m_furst_reading_y = true
+  if ((m_first_reading_x == true) || (m_first_reading_y == true)){
+
+    //Calculate the difference between current position in x and y direction.
     double x_dist = m_current_x - m_previous_x;
     double y_dist = m_current_y - m_previous_y;
 
+    //Add the distance to the total distance using pythagoras.
     m_total_distance += sqrt(pow(x_dist,2) + pow(y_dist,2));
     m_previous_x = m_current_x;
     m_previous_y = m_current_y;
 
+    //Send the total distance back to MOOSDB, with the msg key ODOMETRY_DIST
     Notify("ODOMETRY_DIST",m_total_distance);
   }
 
+  //Post the report to the AppCast
   AppCastingMOOSApp::PostReport();
   return(true);
 }
@@ -114,7 +133,11 @@ bool Odometry::OnStartUp()
 
 void Odometry::RegisterVariables()
 {
+  //Perform Register Variables procedure on the AppCast
   AppCastingMOOSApp::RegisterVariables();
+
+  //Register the app for the following three variables in the MOOSDB. 
+  //The 0 means that it checks all messages sent from the MOOSDB.
   Register("NAV_X", 0);
   Register("NAV_Y", 0);
   Register("APPCAST_REQ",0);
@@ -126,7 +149,7 @@ void Odometry::RegisterVariables()
 //   Returns: true.
 
 bool Odometry::buildReport()
-{
+{ 
   m_msgs << "Total distance travelled: " << m_total_distance << endl;
   return (true);
 }

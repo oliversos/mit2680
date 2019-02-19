@@ -24,19 +24,23 @@ class Odometry : public AppCastingMOOSApp
    bool OnConnectToServer();
    bool OnStartUp();
 
- protected: // Specific MOOSApp functions for registering variables and AppCasting
+ protected: 
+ // Specific MOOSApp functions for registering variables and AppCasting
    void RegisterVariables();
    bool buildReport();
 
- private: // Configuration variables
- 	bool m_first_reading;
+ private: 
+	// Configuration variables. m_first_readings variables describes if the position is set. This is used to calculate the correct total distance in the special case where the starting point of the vehicle is not (0,0). m_previous_x and m_previous_y is continously used to update the total distance traveled. 
+ 	bool m_first_reading_x;
+ 	bool m_first_reading_y;
  	double m_previous_x;
  	double m_previous_y;
- 	double m_total_distance;
 
- private: // State variables
+ private: 
+ // State variables. Describes the current position and distance traveled by the vehicle.
  	double m_current_x;
  	double m_current_y;
+ 	double m_total_distance;
 };
 
 #endif 
