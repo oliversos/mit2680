@@ -12,4 +12,9 @@ missions/alder/*
 !missions/alder/alder_lab4.moos
 !missions/alder/alder_lab4.bhv
 
+src/*
+!src/pOdometry/
+
+
+
 scripts/
