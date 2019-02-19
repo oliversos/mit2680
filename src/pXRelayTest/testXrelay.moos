@@ -1,0 +1,68 @@
+ServerHost = localhost
+ServerPort = 9000
+Community  = alpha
+
+//------------------------------------------
+// Antler configuration  block
+
+ProcessConfig = ANTLER
+{
+  MSBetweenLaunches = 200
+
+  Run = MOOSDB	         @ NewConsole = true
+  Run = pXRelayTest	 @ NewConsole = false ~ pXRelayTest_PEARS
+  Run = pXRelayTest	 @ NewConsole = false ~ pXRelayTest_APPLES
+  Run = uTimerScript     @ NewConsole = false 
+}
+
+//------------------------------------------
+// pXRelayTest_APPLES config block
+
+ProcessConfig = pXRelayTest_APPLES
+{
+  AppTick	= 10
+  CommsTick	= 10
+  INCOMING_VAR  = APPLES
+  OUTGOING_VAR  = PEARS
+}
+
+//------------------------------------------
+// pXRelayTest_PEARS config block
+
+ProcessConfig = pXRelayTest_PEARS
+{
+  AppTick	= 10
+  CommsTick	= 10
+  INCOMING_VAR  = PEARS
+  OUTGOING_VAR  = APPLES
+}
+
+ProcessConfig = uTimerScript
+{
+  AppTick   = 4
+  CommsTick = 4
+
+
+  event  = var=COUNTER_A, val=1,  time=0.5 
+  event  = var=COUNTER_A, val=2,  time=1.0
+  event  = var=COUNTER_A, val=3,  time=1.5 
+  event  = var=COUNTER_A, val=4,  time=2.0 
+  event  = var=COUNTER_A, val=5,  time=2.5   
+  event  = var=COUNTER_A, val=6,  time=3.0 
+  event  = var=COUNTER_A, val=7,  time=3.5 
+  event  = var=COUNTER_A, val=8,  time=4.0 
+  event  = var=COUNTER_A, val=9,  time=4.5 
+  event  = var=COUNTER_A, val=10, time=5:10 
+  event  = var=PEARS,     val=1,  time=10
+
+  condition = APPLES == $(PEARS)
+  
+  reset_max  = nolimit
+  reset_time = all-posted  
+}
+
+ProcessConfig = pOdometry
+{
+Apptick = 4
+CommsTick = 4
+}

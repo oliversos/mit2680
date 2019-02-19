@@ -1,0 +1,19 @@
+bin/
+lib/
+build/
+
+# not removed since CMakeFile.txt wants all folders
+#src/*
+#!src/pOdometry/*
+
+clean.sh
+.svn/
+
+# adding relevant mission files to git in deeper folders
+missions/*
+!missions/alder/
+missions/alder/*
+!missions/alder/alder_lab4.moos
+!missions/alder/alder_lab4.bhv
+
+scripts/
