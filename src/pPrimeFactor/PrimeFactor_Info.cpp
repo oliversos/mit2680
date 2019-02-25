@@ -20,9 +20,9 @@ void showSynopsis()
 {
   blk("SYNOPSIS:                                                       ");
   blk("------------------------------------                            ");
-  blk("  The pPrimeFactor application is used for               ");
-  blk("                                                                ");
-  blk("                                                                ");
+  blk("  The pPrimeFactor application is used for continously          ");
+  blk("  calculating the prime factors of numbers that is sent to the  ");
+  blk("  application.                                                  ");
   blk("                                                                ");
   blk("                                                                ");
 }
@@ -87,20 +87,20 @@ void showInterfaceAndExit()
 {
   blk("                                                                ");
   blu("=============================================================== ");
-  blu("pPrimeFactor INTERFACE                                    ");
+  blu("pPrimeFactor INTERFACE                                          ");
   blu("=============================================================== ");
   blk("                                                                ");
   showSynopsis();
   blk("                                                                ");
   blk("SUBSCRIPTIONS:                                                  ");
   blk("------------------------------------                            ");
-  blk("  NODE_MESSAGE = src_node=alpha,dest_node=bravo,var_name=FOO,   ");
-  blk("                 string_val=BAR                                 ");
+  blk("  NUM_VALUE = string that contains a number. Example: '90090'   ");
+  blk("                                                                ");
   blk("                                                                ");
   blk("PUBLICATIONS:                                                   ");
   blk("------------------------------------                            ");
-  blk("  Publications are determined by the node message content.      ");
-  blk("                                                                ");
+  blk("  PRIME_RESULT = string that contains data about the factorization");
+  blk("  Example: orig=325,received=6,calculated=3solve_time=1.38689,primes=5,5,13,username=oliveros   ");
   exit(0);
 }
 

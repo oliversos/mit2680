@@ -5,6 +5,7 @@
 /*    DATE: 21.02.2019                                      */
 /************************************************************/
 
+#include "MOOS/libMOOS/MOOSLib.h"
 #include <iterator>
 #include "MBUtils.h"
 #include "PrimeFactor.h"
@@ -24,6 +25,8 @@ using namespace std;
 PrimeFactor::PrimeFactor()
 {
   m_numbers = {};
+  m_calculated = 0;
+  m_received = 0;
 }
 
 //---------------------------------------------------------
@@ -46,12 +49,13 @@ bool PrimeFactor::OnNewMail(MOOSMSG_LIST &NewMail)
   for(p=NewMail.begin(); p!=NewMail.end(); p++) {
     CMOOSMsg &msg = *p;
 
-    //If a message with key NUM_VALUE is recieved, create a primeEntry from the message, and place the primeEntry in the from of the m_numbers list.
+    //If a message with key NUM_VALUE is received, create a primeEntry from the message, and place the primeEntry in the from of the m_numbers list.
 
     if(msg.GetKey() == "NUM_VALUE"){
+      m_received ++;
       string out = msg.GetString();
       uint64_t num = strtoul(out.c_str(),NULL,0);
-      PrimeEntry prime(num);      
+      PrimeEntry prime(num,m_received);      
       m_numbers.push_front(prime);
     }
 
@@ -99,23 +103,26 @@ bool PrimeFactor::Iterate()
   while(!m_numbers.empty()){
 
     // Pulls out a PrimeEntry from the back of m_numbers
-    PrimeEntry prime = m_numbers.back();
+    PrimeEntry number = m_numbers.back();
     
     // Tries to calculate it's prime factors, and returns weather the task was successfull
-    complete = prime.factor(iterations);
+    complete = number.factor(iterations);
 
     // If the prime factorization was completed, remove the current PrimeEntry from the m_numbers list, get the remaining iterations and post the report.
     if (complete == true){
+      m_calculated ++;
       m_numbers.pop_back();
-      out = prime.getReport();
-      iterations = prime.getIterations();
+      number.setCalculationTime(MOOSTime());
+      number.setCalculated(m_calculated);
+      out = number.getReport();
+      iterations = number.getIterations();
       Notify("PRIME_RESULT",out);
     }
 
     // If the prime factorization was not completed, take out the current PrimeEntry from the back of the list, and place it in the front. This way, it will be processed after all the other PrimeEntries in the list have been given a try to be completely primefactorized.
     else if (complete == false){
       m_numbers.pop_back();
-      m_numbers.push_front(prime);
+      m_numbers.push_front(number);
       return (true);
     }
 

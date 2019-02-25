@@ -1,22 +1,21 @@
 /************************************************************/
-/*    NAME: Oliver Os                                              */
+/*    NAME: Oliver Os                                       */
 /*    ORGN: MIT                                             */
-/*    FILE: PrimeFactor.h                                          */
-/*    DATE:                                                 */
+/*    FILE: PrimeFactor.h                                   */
+/*    DATE: 21.02.2019                                      */
 /************************************************************/
 
 #ifndef PrimeFactor_HEADER
 #define PrimeFactor_HEADER
 
-#include "MOOS/libMOOS/MOOSLib.h"
-#include <sstream>
 #include "PrimeEntry.h"
+#include "MOOS/libMOOS/MOOSLib.h"
 
 using namespace std;
 
 class PrimeFactor : public CMOOSApp
 {
- public:
+ public: // Constructor and destructor
    PrimeFactor();
    ~PrimeFactor();
 
@@ -28,9 +27,12 @@ class PrimeFactor : public CMOOSApp
 
  protected:
    void RegisterVariables();
-   string categorizeInt(uint64_t number);
-   string calculateFactors(uint64_t num);
+
+
+ protected: 
 	 list<PrimeEntry> m_numbers;
+    unsigned int m_received;
+    unsigned int m_calculated;
 };
 
 #endif 

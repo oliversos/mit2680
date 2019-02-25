@@ -5,7 +5,8 @@
 /*    DATE: 21.02.2019                                      */
 /************************************************************/
 
-#include "PrimeEntry.h"
+
+#include "MOOS/libMOOS/MOOSLib.h"
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -24,13 +25,15 @@ using namespace std;
 // Procedure: PrimeEntry()
 // Purpose: Constructor. Creates a primeEntry object and initializes values.
 
-PrimeEntry::PrimeEntry(uint64_t number)
+PrimeEntry::PrimeEntry(uint64_t number, unsigned int received)
 {
 	setOriginalVal(number);
 	setDone(false);
 	setStartindex(2);
 	m_factors = {};
 	setIterations(0);
+	setReceived(received);
+	setStartTime(MOOSTime());
 }
 
 
@@ -109,20 +112,17 @@ string PrimeEntry::getReport()
 	stringstream ss;
 
 	// Set up the stringstream with the original number and text for primes
-	ss << "Origin=" << m_orig << ", primes=";
+	ss << "orig=" << m_orig << ",received=" << m_received << ",calculated=" << m_calculated << ",solve_time=" << m_calculationtime << ",primes=";
 
 	// For all the primes in m_factors that has been calculated in factors, add them to the print statement
 	for (int i = 0; i < m_factors.size() ; i++){
 		ss << m_factors[i] << ",";
 	}
 
+	ss << "username=oliveros" << endl;
+
 	// Convert the stringstream to a string
 	string out = ss.str();
-
-	// Remove the last comma of the string
-	if(out.back() == ','){
-		out.pop_back();
-	}
 
 	// return the completed string
 	return out;
