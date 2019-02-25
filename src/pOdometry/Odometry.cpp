@@ -112,6 +112,7 @@ bool Odometry::Iterate()
 
   //Post the report to the AppCast
   AppCastingMOOSApp::PostReport();
+  cout << "HEISANN!!" << endl;
   return(true);
 }
 

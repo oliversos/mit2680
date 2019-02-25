@@ -14,7 +14,7 @@ missions/alder/*
 
 src/*
 !src/pOdometry/
-
+!src/pPrimeFactor/
 
 
 scripts/
