@@ -33,6 +33,7 @@ class PrimeFactor : public CMOOSApp
 	 list<PrimeEntry> m_numbers;
     unsigned int m_received;
     unsigned int m_calculated;
+    unsigned int m_iterations;
 };
 
 #endif 

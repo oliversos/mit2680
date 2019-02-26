@@ -107,7 +107,7 @@ bool PrimeEntry::factor(unsigned long int max_steps)
 //   Purpose: Print a report of the original number and all iẗ́'s prime factors
 //   Returns: A string of the original number and all it's prime factors
 
-string PrimeEntry::getReport()
+string PrimeEntry::getReport() const
 {
 	stringstream ss;
 

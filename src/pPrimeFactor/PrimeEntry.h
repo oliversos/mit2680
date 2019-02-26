@@ -35,17 +35,17 @@ public: //Setters
 
 public: 
 	// Returns true if the factorization is completed, false otherwise
-	bool done() {return (m_done);};
+	bool done() const {return (m_done);};
 
 	// Performs a prime number factorization on the number
 	bool factor(unsigned long int max_steps);
 
 	// Getters 
-	unsigned int getIterations()              {return m_iterations;};
-	unsigned int getStartIndex()              {return m_start_index;};
+	unsigned int getIterations() const         {return m_iterations;};
+	unsigned int getStartIndex() const         {return m_start_index;};
 
 	// Returns a string that shows the original number and its prime factors
-	string getReport();
+	string getReport() const;
 
 private: 
 	// Indicates the number that the prime factorization algorithm should start the search after the process is interupted.

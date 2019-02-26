@@ -24,9 +24,21 @@ using namespace std;
 
 PrimeFactor::PrimeFactor()
 {
+  // List that contains all the numbers that is yet to be processed
   m_numbers = {};
+
+  // Amount of numbers successfully calculated
   m_calculated = 0;
+
+  // Amount of numbers that the app has received.
   m_received = 0;
+
+  // The maximum modulus operations for the current iterate loop.
+  // This amount of iterations that the computer can process during one 
+  // iterate loop will obviously vary, depending of the computer CPU.
+  // Therefore I suggest that this is tested and changed until the app works 
+  // properly on the users computer.
+  m_iterations = 1000000;
 }
 
 //---------------------------------------------------------
@@ -49,7 +61,7 @@ bool PrimeFactor::OnNewMail(MOOSMSG_LIST &NewMail)
   for(p=NewMail.begin(); p!=NewMail.end(); p++) {
     CMOOSMsg &msg = *p;
 
-    //If a message with key NUM_VALUE is received, create a primeEntry from the message, and place the primeEntry in the from of the m_numbers list.
+    //If a message with key NUM_VALUE is received, create a primeEntry from the message, and place the primeEntry in the from of the m_numbers list. Also, increase the amount of received numbers.
 
     if(msg.GetKey() == "NUM_VALUE"){
       m_received ++;
@@ -94,11 +106,11 @@ bool PrimeFactor::Iterate()
   // Indicates weather the current number was completed or not
   bool complete;
 
+  // Set the total iterations for the current Iterate() loop
+  unsigned int iterations = m_iterations;
+
   // The output to the notify function
   string out;
-
-  // The maximum modulus operations for the current iterate loop
-  int iterations = 500000;
 
   while(!m_numbers.empty()){
 
@@ -108,7 +120,7 @@ bool PrimeFactor::Iterate()
     // Tries to calculate it's prime factors, and returns weather the task was successfull
     complete = number.factor(iterations);
 
-    // If the prime factorization was completed, remove the current PrimeEntry from the m_numbers list, get the remaining iterations and post the report.
+    // If the prime factorization was completed, remove the current PrimeEntry from the m_numbers list, get the remaining iterations and post the report. Also increase the amount of calculated numbers, and set the calculated number to this value. Set the calculation time for the PrimeEntry.
     if (complete == true){
       m_calculated ++;
       m_numbers.pop_back();
