@@ -1,0 +1,39 @@
+//------------------------------------------------
+// pCommunicationAngle config block
+
+
+ServerHost = 18.38.2.158
+ServerPort = 9011
+
+Community = communicationAngle
+
+MOOSTimeWard = 1
+
+ProcessConfig = ANTLER
+{
+   MSBetweenLaunches = 200
+
+   Run = MOOSDB		        @ NewConsole = false
+   Run = pCommunicationAngle	@ NewConsole = false ~pCommunicationAngle_oliveros
+   Run = pLogger                @ NewConsole = false ~pLogger_oliveros
+}
+
+
+ProcessConfig = pCommunicationAngle_oliveros
+{
+   AppTick   = 4
+   CommsTick = 4
+
+}
+
+
+ProcessConfig = pLogger_oliveros
+{
+  AsyncLog = true
+  WildCardLogging = true
+  WildCardOmitPattern = *_STATUS
+ 
+  LOG = PRIME_RESULT @ 0
+  LOG = NUM_VALUE   @ 0	
+}
+
