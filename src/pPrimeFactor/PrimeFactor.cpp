@@ -24,8 +24,6 @@ using namespace std;
 
 PrimeFactor::PrimeFactor()
 {
-  // List that contains all the numbers that is yet to be processed
-  m_numbers = {};
 
   // Amount of numbers successfully calculated
   m_calculated = 0;
