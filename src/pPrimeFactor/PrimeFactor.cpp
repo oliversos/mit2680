@@ -180,3 +180,4 @@ void PrimeFactor::RegisterVariables()
 {
   Register("NUM_VALUE",0);
 }
+
