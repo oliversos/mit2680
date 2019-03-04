@@ -24,7 +24,6 @@ using namespace std;
 
 PrimeFactor::PrimeFactor()
 {
-
   // Amount of numbers successfully calculated
   m_calculated = 0;
 

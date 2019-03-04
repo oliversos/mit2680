@@ -30,7 +30,6 @@ PrimeEntry::PrimeEntry(uint64_t number, unsigned int received)
 	setOriginalVal(number);
 	setDone(false);
 	setStartindex(2);
-	m_factors = {};
 	setIterations(0);
 	setReceived(received);
 	setStartTime(MOOSTime());
