@@ -171,7 +171,7 @@ bool PrimeFactor::OnStartUp()
 }
 
 //---------------------------------------------------------
-// Procedure: RegisterVariables
+// Procedure: RegisterVariables()
 //   Purpose: Registers the app for NUM_VALUE to get updates on which numbers  //            that should be prime factorized. The 0 indicates that it will //            insantly recieve updates once NUM_VALUE is posted from MOOSDB
 void PrimeFactor::RegisterVariables()
 {

@@ -26,13 +26,17 @@ class PrimeFactor : public CMOOSApp
    bool OnStartUp();
 
  protected:
+  // Registers the app for the relevant variables
    void RegisterVariables();
 
-
  protected: 
+  // Represents the numbers that is yet to be prime factorized
 	 list<PrimeEntry> m_numbers;
+  // Represents the amount of numbers received
     unsigned int m_received;
+  // Represents the amount of calculated numbers
     unsigned int m_calculated;
+  // Represents the max mathematical operations per iterate loop
     unsigned int m_iterations;
 };
 
