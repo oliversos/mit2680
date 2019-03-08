@@ -151,10 +151,12 @@ bool CommunicationAngle::Iterate()
 
     // Angle is set to 100 if no path exists. If this is not the case, a direct path exists
     if (angle != 100){  
-      //NOTIFY EDIT HER!!!=!=!
+      double radius = calculateCircleRadius(circleCenter);
+      double loss = calculateTransmissionLoss(radius,angle);
 
-
-      Notify("ACOUSTIC_PATH","elev_angle");
+      stringstream ss;
+      ss << "elev_angle="<< angle <<",transmission_loss="<<loss<<",id=oliveros@mit.edu" << endl;
+      Notify("ACOUSTIC_PATH",ss.str());
     }
 
     // Else no path exists
@@ -185,7 +187,6 @@ bool CommunicationAngle::Iterate()
           if (m_nav_depth - height < 0){
 
             // Notify that there exists no path
-            cout << "NaN" << endl;
             Notify("ACOUSTIC_PATH","NaN");
           }
         }
@@ -371,9 +372,50 @@ double CommunicationAngle::calculateArcLength(double radius) const
   return radius*acos(1-pow(d,2)/(2*pow(radius,2)));
 }
 
-double CommunicationAngle::calculateTransmissionLoss(double archlength) const
+//---------------------------------------------------------
+// Procedure: calculateTransmissionLoss
+//   Purpose: Calculates the transmissionloss of a ray sent from our vehicle   //            to the collaborator, given a radius of the circle for which the //            sound speed travels along iẗ́̈́̈́'s arc and the angle the ray is //            sent. 
+//     Input: The radius of the circle and the angle the sound is sent
+//   Returns: The transmissionloss for the soundray. 
+double CommunicationAngle::calculateTransmissionLoss(double radius,double out_angle) const
 {
-  return 0;
+  // Calculates the soundspeed at the transmitter and receiver positions
+  double sound_speed_transmitter = calculateSoundSpeed(m_nav_depth);
+  double sound_speed_receiver = calculateSoundSpeed(m_col_nav_depth);
+
+  // Calculates the angle from which the receiver gets receives the sound
+  double in_angle = acos(cos(out_angle)*sound_speed_receiver/sound_speed_transmitter);
+
+  // This parameter implies how much the sound spread in the water
+  double d_theta = 0.001;
+
+  // Calculates the length of the trajectory the sound travels along
+  double arclength = radius*(out_angle - in_angle);
+
+  // Calculates the length to two x- positions which defines how the sound travels
+  double r_1 = radius*(sin(out_angle) + sin(arclength/radius - out_angle));
+  double r_2 = radius*(sin(out_angle + d_theta) + sin(arclength/radius - out_angle - d_theta));
+
+  // Calculates the area of pressure from the sound at the area around the receiver
+  double j_area = (r_1/sin(in_angle))*((r_2 - r_1)/d_theta);
+
+  // Calculates the pressure loss
+  double p_s = (1/4*M_PI)*sqrt(abs((cos(out_angle)*sound_speed_receiver)/(sound_speed_transmitter*j_area)));
+  double p_1 = (1/4*M_PI);
+
+  // Returns the transmission loss
+  return(-20*log10(p_s/p_1));
+ }
+
+
+//---------------------------------------------------------
+// Procedure: calculateSoundSpeed()
+//   Purpose: Calculates the soundspeed at a given depth
+//     Input: The depth of interest
+//   Returns: The sound speed at the given depth
+double CommunicationAngle::calculateSoundSpeed(double depth) const
+{
+  return m_surface_sound_speed + m_sound_speed_gradient*depth;
 }
 
 

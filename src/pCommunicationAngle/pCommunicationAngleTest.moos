@@ -1,0 +1,66 @@
+//------------------------------------------------
+// pCommunicationAngle config block
+
+
+ServerHost = oceanai.mit.edu
+ServerPort = 9011
+
+
+//ServerHost = localhost
+//ServerPort = 9000
+Simulator  = true
+
+Community = communicationAngle
+
+MOOSTimeWard = 1
+
+ProcessConfig = ANTLER
+{
+   MSBetweenLaunches = 200
+   
+   Run = MOOSDB                 @ NewConsole = false
+   //Run = pCommunicationAngle	@ NewConsole = false //~pCommunicationAngle_oliver
+   Run = uTimerScript           @ NewConsole = false
+   Run = pLogger                @ NewConsole = false
+}
+
+
+ProcessConfig = pCommunicationAngle //_oliver
+{
+   AppTick   = 4
+   CommsTick = 4
+}
+
+ProcessConfig = uTimerScript
+{
+   AppTick   = 4
+   CommsTick = 4
+
+   paused = false
+
+   event      = var=NAV_X, val=9, time=1
+   event      = var=NAV_DEPTH, val=2, time=1
+   event      = var=VEHICLE_NAME, val="OLIVER", time=2
+   
+   event      = var=COLLABORATOR_NAME, val="FRIEND", time=3
+   event      = var=FRIEND_NAV_X, val=3, time=5
+   event      = var=FRIEND_NAV_DEPTH, val=6, time=5
+
+   event      = var=NAV_X, val=-10000, time = 10
+   event      = var=NAV_DEPTH, val=5950  , time = 10
+   event      = var=FRIEND_NAV_X, val=10000, time=10
+   event      = var=FRIEND_NAV_DEPTH, val=5950, time=10
+
+   reset_time = 30
+}
+
+ProcessConfig = pLogger
+{
+  AsyncLog = true
+  WildCardLogging = true
+  WildCardOmitPattern = *_STATUS
+ 
+  LOG = ACOUSTIC_PATH @ 0
+  LOG = CONNECTIVITY_LOCATION   @ 0	
+}
+

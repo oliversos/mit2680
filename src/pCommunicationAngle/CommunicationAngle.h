@@ -43,7 +43,10 @@ class CommunicationAngle : public CMOOSApp
    double calculateArcLength(double radius) const;
 
    //Calculates the transmissionloss of a given message send through water
-   double calculateTransmissionLoss(double archlength) const;
+   double calculateTransmissionLoss(double radius,double archlength) const;
+
+   //Calculates the soundspeed at a given depth
+   double calculateSoundSpeed(double depth) const;
 
  private: // Configuration variables
 
