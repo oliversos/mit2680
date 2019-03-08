@@ -8,7 +8,7 @@ clean.sh
 # adding relevant mission files to git in deeper folders
 missions/*
 !missions/alder/
-!mission/lab_07/
+!missions/lab_07/
 missions/alder/*
 !missions/alder/alder_lab4.moos
 !missions/alder/alder_lab4.bhv
