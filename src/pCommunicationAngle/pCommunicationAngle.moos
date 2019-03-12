@@ -5,6 +5,9 @@
 ServerHost = oceanai.mit.edu
 ServerPort = 9011
 
+//ServerHost = localhost
+//ServerPort = 9000
+
 Simulator  = true
 
 Community = communicationAngle

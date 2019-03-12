@@ -31,8 +31,10 @@ CommunicationAngle::CommunicationAngle()
 
   // The position variables which is used to calculate the acoustic path is initiated to arbitrary numbers which is highly unlikely to be used as values for the calculations. The depth value is impossible to reach, as iẗ́'s above the surface of the water'
   m_nav_x = 1000001;
+  m_nav_y = 1000001;
   m_nav_depth = -1;
   m_col_nav_x = 1000001;
+  m_col_nav_y = 1000001;
   m_col_nav_depth = -1;
 }
 
@@ -70,14 +72,17 @@ bool CommunicationAngle::OnNewMail(MOOSMSG_LIST &NewMail)
 
     if (msg.GetKey() == "NAV_X"){
       m_nav_x = msg.GetDouble();
+      cout <<"My xpos is: " << m_nav_x << endl;
     }
 
     if (msg.GetKey() == "NAV_Y"){
       m_nav_y = msg.GetDouble();
+      cout <<"My ypos is: " << m_nav_y << endl;
     }
 
     if (msg.GetKey() == "NAV_DEPTH"){
       m_nav_depth = msg.GetDouble();
+      cout <<"My depth is: " << m_nav_depth << endl;
     }
 
     if(msg.GetKey() == "NAV_HEADING"){
@@ -93,16 +98,19 @@ bool CommunicationAngle::OnNewMail(MOOSMSG_LIST &NewMail)
     ref = m_collaborator + "_NAV_X";
     if(msg.GetKey() == ref){
       m_col_nav_x = msg.GetDouble();
+      cout <<"Col xpos is: " << m_col_nav_x << endl;
     }
 
     ref = m_collaborator + "_NAV_Y";
     if(msg.GetKey() == ref){
       m_col_nav_y = msg.GetDouble();
+      cout <<"Col ypos is: " << m_col_nav_y << endl;
     }
 
     ref = m_collaborator + "_NAV_DEPTH";
     if(msg.GetKey() == ref){
       m_col_nav_depth = msg.GetDouble();
+      cout <<"Col depth is: " << m_col_nav_depth << endl;
     }
 
     ref = m_collaborator + "_NAV_HEADING";
@@ -115,9 +123,8 @@ bool CommunicationAngle::OnNewMail(MOOSMSG_LIST &NewMail)
       m_col_nav_speed = msg.GetDouble();
     }
   }
-
   // If nav_depth and nav_x is updated for both our vehicle and the collaborator, set m_initiated to true
-  if((m_col_nav_depth != -1) && (m_nav_depth != -1) && (m_nav_x != 1000001) && (m_col_nav_x != 1000001)){
+  if((m_col_nav_depth != -1) && (m_nav_depth != -1) && (m_nav_x != 1000001) && (m_col_nav_x != 1000001) && (m_nav_y != 1000001) && (m_col_nav_y != 1000001)){
     m_initiated = true;
   }
    return(true);
@@ -144,7 +151,7 @@ bool CommunicationAngle::Iterate()
   if (m_initiated == true){
 
     // Defines the point representing the circlecenter on the circle which arc represents the acoustic path from our vessel to the collaborator, given infinately depth.
-    Point circleCenter = getCircleCenter(m_nav_x,m_nav_depth);
+    Point circleCenter = getCircleCenter(0,m_nav_depth);
 
     // Defines the fireangle to reach the collaborator from the current location
     double angle = calculateFireAngle(circleCenter);
@@ -153,6 +160,8 @@ bool CommunicationAngle::Iterate()
     if (angle != 100){  
       double radius = calculateCircleRadius(circleCenter);
       double loss = calculateTransmissionLoss(radius,angle);
+      angle = -angle*180/M_PI;
+      cout << "Angle: " << angle << endl;
 
       stringstream ss;
       ss << "elev_angle="<< angle <<",transmission_loss="<<loss<<",id=oliveros@mit.edu" << endl;
@@ -188,6 +197,7 @@ bool CommunicationAngle::Iterate()
 
             // Notify that there exists no path
             Notify("ACOUSTIC_PATH","NaN");
+            connection = true;
           }
         }
 
@@ -282,7 +292,7 @@ void CommunicationAngle::RegisterCollaborator(string collaborator)
 double CommunicationAngle::calculateFireAngle(Point circleCenter) const
   {
     // Defines the point where the vehicle is
-    Point me(m_nav_x,m_nav_depth);
+    Point me(0,m_nav_depth);
 
     // Defines the line between our location and the location of the input circlecenter
     Line toCircleCenter(me,circleCenter);
@@ -290,19 +300,8 @@ double CommunicationAngle::calculateFireAngle(Point circleCenter) const
     // Returns the angle from our vehicle to the circlecenter. This angel is tangential to the required fireangle.
     double angle = toCircleCenter.getGradient(); 
 
-    // Some logic to get the angle right. If the x position of the colaborator is greater than our position, add pi/2 to the angle variable. Otherwise subtract pi/2 from angle. In addition, we want the angle to stay between pi and - pi. Therefore we add/subtract 2*pi if that is neccesary.
-    if (m_col_nav_x > m_nav_x){
-      angle += M_PI/2;
-      if (angle > M_PI){
-        angle -= 2*M_PI;
-      }
-    }
-    else{
-      angle -= M_PI/2;
-      if (angle < M_PI){
-        angle += 2*M_PI;
-      }
-    }
+    // Adds pi/2 to calculate the fireangle required to hit the collaborator
+    angle += M_PI/2;
 
     //Here we aim to calculate weather the path actually exists, given the waterdepth, height of the circle above the water and the radius of the circle representing the soundtransmission between the vehicles.
     double radius = calculateCircleRadius(circleCenter);
@@ -312,11 +311,10 @@ double CommunicationAngle::calculateFireAngle(Point circleCenter) const
     if (height + radius > m_water_depth){
 
       // Defines which side of the circle centers x position our and the collaborator vehicle is located.
-      int test_mypos = ((m_nav_x < circleCenter.getX()) - (m_nav_x > circleCenter.getX()));
-      int test_otherpos = ((m_col_nav_x < circleCenter.getX()) - (m_col_nav_x > circleCenter.getX()));
+      bool test_pos = (circleCenter.getX() - sqrt(pow(m_nav_x - m_col_nav_x,2) + pow(m_nav_y - m_col_nav_y,2)) < 0);
 
       // If they are defined on different sides of the x position of the circle center, set the angle value to 100, which is an invalid angle.
-      if (test_mypos != test_otherpos){
+      if (test_pos == true){
         angle = 100;
       }
     }
@@ -330,12 +328,12 @@ double CommunicationAngle::calculateFireAngle(Point circleCenter) const
 //     Input: The x and depth position of our vehicle.
 //   Returns: The Point object representing the center of the circle described //            in purpose
 
-Point CommunicationAngle::getCircleCenter(double nav_x, double nav_y) const
+Point CommunicationAngle::getCircleCenter(double nav_x, double nav_depth) const
 {
 
   // Defines the points describing our position and the collaborator position and the line between.
-  Point me(nav_x,nav_y);
-  Point other(m_col_nav_x,m_col_nav_depth);
+  Point me(0,nav_depth);
+  Point other(sqrt(pow(m_nav_x - m_col_nav_x,2) + pow(m_nav_y - m_col_nav_y,2)),m_col_nav_depth);
   Line between(me,other);
 
   // Calculates the height of the circle
@@ -355,7 +353,7 @@ Point CommunicationAngle::getCircleCenter(double nav_x, double nav_y) const
 
 double CommunicationAngle::calculateCircleRadius(Point circleCenter) const
 {
-  double radius = sqrt(pow(circleCenter.getX() - m_nav_x,2) + pow(circleCenter.getY() - m_nav_depth,2));
+  double radius = sqrt(pow(circleCenter.getX(),2) + pow(circleCenter.getY() - m_nav_depth,2));
   return radius;
 }
 
@@ -390,19 +388,20 @@ double CommunicationAngle::calculateTransmissionLoss(double radius,double out_an
   double d_theta = 0.001;
 
   // Calculates the length of the trajectory the sound travels along
-  double arclength = radius*(out_angle - in_angle);
+  double arclength = radius*(out_angle + in_angle);
 
   // Calculates the length to two x- positions which defines how the sound travels
+
   double r_1 = radius*(sin(out_angle) + sin(arclength/radius - out_angle));
   double r_2 = radius*(sin(out_angle + d_theta) + sin(arclength/radius - out_angle - d_theta));
 
   // Calculates the area of pressure from the sound at the area around the receiver
-  double j_area = (r_1/sin(in_angle))*((r_2 - r_1)/d_theta);
+  double j_area = (r_1/sin(in_angle))*((r_1 - r_2)/d_theta);
 
   // Calculates the pressure loss
-  double p_s = (1/4*M_PI)*sqrt(abs((cos(out_angle)*sound_speed_receiver)/(sound_speed_transmitter*j_area)));
-  double p_1 = (1/4*M_PI);
-
+  double p_s = (0.25*M_PI)*sqrt(abs((cos(out_angle)*sound_speed_receiver)/(sound_speed_transmitter*j_area)));
+  double p_1 = 0.25*M_PI;
+  
   // Returns the transmission loss
   return(-20*log10(p_s/p_1));
  }

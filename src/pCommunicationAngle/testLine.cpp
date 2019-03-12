@@ -13,6 +13,5 @@ int main()
 	cout << center.getX() << ", " << center.getY() << endl;
 	Line toCircleCenter(p1,center);
   double angle = toCircleCenter.getGradient();
-
   cout << "Angle: " << angle << endl;
 }

@@ -2,12 +2,12 @@
 // pCommunicationAngle config block
 
 
-ServerHost = oceanai.mit.edu
-ServerPort = 9011
+//ServerHost = oceanai.mit.edu
+//ServerPort = 9011
 
 
-//ServerHost = localhost
-//ServerPort = 9000
+ServerHost = localhost
+ServerPort = 9000
 Simulator  = true
 
 Community = communicationAngle
@@ -38,18 +38,15 @@ ProcessConfig = uTimerScript
 
    paused = false
 
-   event      = var=NAV_X, val=9, time=1
-   event      = var=NAV_DEPTH, val=2, time=1
+   event      = var=NAV_X, val=0, time=1
+   event      = var=NAV_Y, val=0, time = 1
+   event      = var=NAV_DEPTH, val=1500, time=1
    event      = var=VEHICLE_NAME, val="OLIVER", time=2
    
    event      = var=COLLABORATOR_NAME, val="FRIEND", time=3
-   event      = var=FRIEND_NAV_X, val=3, time=5
-   event      = var=FRIEND_NAV_DEPTH, val=6, time=5
-
-   event      = var=NAV_X, val=-10000, time = 10
-   event      = var=NAV_DEPTH, val=5950  , time = 10
-   event      = var=FRIEND_NAV_X, val=10000, time=10
-   event      = var=FRIEND_NAV_DEPTH, val=5950, time=10
+   event      = var=FRIEND_NAV_X, val=15000, time=5
+   event      = var=FRIEND_NAV_DEPTH, val=2000, time=5
+   event      = var=FRIEND_NAV_Y, val = 15000, time=5
 
    reset_time = 30
 }
