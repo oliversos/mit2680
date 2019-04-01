@@ -1,0 +1,15 @@
+//--------------------------------------------------
+// uFldNodeBroker configuration block from plugin
+
+ProcessConfig = uFldNodeBroker
+{
+  AppTick   = 4
+  CommsTick = 4
+
+  TRY_SHORE_HOST = pshare_route=localhost:$(SHORE_LISTEN)    
+
+  BRIDGE = src=APPCAST, alias = APPCAST
+  BRIDGE = src=NODE_REPORT_LOCAL,  alias=NODE_REPORT
+  BRIDGE = src=NODE_MESSAGE_LOCAL, alias=NODE_MESSAGE
+  BRIDGE = src=VIEW_SEGLIST, alias = VIEW_SEGLIST
+}

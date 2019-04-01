@@ -1,0 +1,81 @@
+//-----------------------------------------------
+// Helm Behavior file 
+
+initialize DEPLOY  = false
+initialize REFUEL  = false
+initialize RETURN = false
+
+set MODE = OPERATING {
+  DEPLOY = true
+} INACTIVE
+
+set MODE = REFUELLING {
+  MODE = OPERATING
+  REFUEL = true
+} DRIVING
+
+set MODE = RETURNING {
+  MODE = OPERATING:REFUELLING
+  RETURN = true
+} REFUELLING_NOW
+
+
+//----------------------------------------------
+Behavior = BHV_Waypoint
+{
+  name      = waypt_return
+  pwt       = 100
+  condition = MODE == DRIVING
+
+      speed = 1.3
+     radius = 3.0
+  nm_radius = 15.0
+     points = $(UPDATES_VAR)
+       lead = 8
+}
+
+Behavior = BHV_Timer
+{
+  name                = refuelling_needed
+  pwt                 = 100
+  condition           = MODE == DRIVING
+  endflag             = REFUEL = true
+  endflag             = RETURN = true
+
+  duration            = 600
+  perpetual           = true
+  duration_idle_decay = false
+}
+
+
+//----------------------------------------------
+Behavior = BHV_Waypoint
+{
+  name      = fuel_returning
+  pwt       = 100
+  condition = MODE==RETURNING
+
+  endflag   = RETURN = false
+  perpetual = true
+
+      speed = 1.2
+     radius = 3.0
+  nm_radius = 15.0
+     point  = $(START_POS)
+       lead = 8
+}
+
+
+//----------------------------------------------
+
+Behavior = BHV_Timer
+{
+  name                = timer_refuel
+  pwt                 = 100
+  condition           = MODE == REFUELLING_NOW
+  endflag             = REFUEL = false
+
+  duration            = 60
+  perpetual           = true
+  duration_idle_decay = false
+}
