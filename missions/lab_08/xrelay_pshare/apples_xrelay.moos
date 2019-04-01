@@ -1,0 +1,44 @@
+ServerHost = localhost
+ServerPort = 9000
+Community  = apples
+
+ProcessConfig = pShare
+{
+  AppTick       = 4
+  Commstick     = 4
+
+  input = route = localhost:9201
+
+  output = src_name=PEARS, route = localhost:9200
+}
+
+
+//------------------------------------------
+// Antler configuration  block
+ProcessConfig = ANTLER
+{
+  MSBetweenLaunches = 200
+
+  Run = MOOSDB	 @ NewConsole = false
+  Run = pXRelay	 @ NewConsole = true ~ pXRelay_APPLES
+  Run = pShare   @ NewConsole = true
+}
+
+
+//------------------------------------------
+// pXRelay_APPLES config block
+
+ProcessConfig = pXRelay_APPLES
+{
+  AppTick	= 1
+  CommsTick	= 1
+
+  INCOMING_VAR  = APPLES
+  OUTGOING_VAR  = PEARS
+}
+
+
+
+
+
+
