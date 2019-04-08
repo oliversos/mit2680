@@ -11,6 +11,7 @@ ProcessConfig = uProcessWatch
   WATCH  = pNodeReporter
   WATCH  = pMarinePID
   WATCH  = pHelmIvP
+  WATCH  = pGenPath
 
   NOWATCH=uXMS*
   NOWATCH=uMAC*

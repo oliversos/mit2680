@@ -119,8 +119,8 @@ bool PointAssign::Iterate()
 {
 	if (m_send_points && !m_visit_points.empty()){
 		stringstream n1, n2;
-		n1 << "VISIT_POINT_" << m_vname[0] << endl;
-		n2 << "VISIT_POINT_" << m_vname[1] << endl;
+		n1 << "VISIT_POINT_" << m_vname[0];
+		n2 << "VISIT_POINT_" << m_vname[1];
 		string name1 = n1.str();
 		string name2 = n2.str();	
 
@@ -130,8 +130,8 @@ bool PointAssign::Iterate()
 		else{
 			assignByRegion(name1,name2);
 		}
-		m_send_points = false;
 	}
+  m_send_points = false;
   return(true);
 }
 
@@ -185,7 +185,7 @@ void PointAssign::assignByAlternate(string name1, string name2)
 		if (m_visit_points.count(i)){
 			Point current = m_visit_points[i];
 			stringstream message;
-			message << "x=" << current.getX() << ", y=" << current.getY() << ", id=" << current.getID() << endl;
+			message << "x=" << current.getX() << ", y=" << current.getY() << ", id=" << current.getID();
       if (i % 2 == 0){
         Notify(name1,message.str());
         string color = "red";
@@ -213,10 +213,11 @@ void PointAssign::assignByRegion(string name1, string name2)
 
 			Point current = m_visit_points[i];
 			stringstream message;
-			message << "x=" << current.getX() << ", y=" << current.getY() << ", id=" << current.getID() << endl;
+			message << "x=" << current.getX() << ", y=" << current.getY() << ", id=" << current.getID();
 			if (current.getX() >= 87){
 				Notify(name1,message.str());
-        cout << "Notifying: " << name1 << " with: " << message.str() << endl;
+        cout << "Sending to: " << name1 << endl;
+        cout << "  Message is: " << message.str() << endl;
         string color = "red";
         postViewPoint(current.getX(),current.getY(),current.getID(),color);
 			}

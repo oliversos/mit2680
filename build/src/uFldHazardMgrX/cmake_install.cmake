@@ -1,4 +1,4 @@
-# Install script for directory: /home/oliver/Documents/moos-ivp-oliveros/src
+# Install script for directory: /home/oliver/Documents/moos-ivp-oliveros/src/uFldHazardMgrX
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -35,19 +35,5 @@ endif()
 # Is this installation the result of a crosscompile?
 if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
-endif()
-
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for each subdirectory.
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/lib_behaviors-test/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pXRelayTest/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pExampleApp/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pPrimeFactor/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pOdometry/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pCommunicationAngle/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pPointAssign/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/pGenPath/cmake_install.cmake")
-  include("/home/oliver/Documents/moos-ivp-oliveros/build/src/uFldHazardMgrX/cmake_install.cmake")
-
 endif()
 

@@ -23,8 +23,8 @@ done
 #-----------------------------------------------------------
 #  Part 2: Create the .moos and .bhv files. 
 #-----------------------------------------------------------
-VNAME1="gilda"  
-VNAME2="henry"  
+VNAME1="GILDA"  
+VNAME2="HENRY"  
 START_POS1="0,0"    
 START_POS2="80,0"   
 LOITER_POS1="x=0,y=-75"
@@ -49,8 +49,7 @@ nsplug meta_vehicle.bhv targ_$VNAME2.bhv -f VNAME=$VNAME2     \
     START_POS=$START_POS2 LOITER_POS=$LOITER_POS2       
 
 nsplug meta_shoreside.moos targ_shoreside.moos -f WARP=$TIME_WARP \
-   VNAME="shoreside"  SHARE_LISTEN=$SHORE_LISTEN  VPORT="9000"    \
-   V1=$VNAME1         V2=$VNAME2    
+   VNAME="shoreside"  SHARE_LISTEN=$SHORE_LISTEN  VPORT="9000"    \  
         
 if [ ${JUST_MAKE} = "yes" ] ; then
     exit 0

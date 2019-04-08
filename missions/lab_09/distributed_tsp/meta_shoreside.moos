@@ -17,9 +17,9 @@ Processconfig = ANTLER
   Run = pLogger         @ NewConsole = false
   Run = pShare          @ NewConsole = false
   Run = pHostInfo       @ NewConsole = false
-  Run = uFldShoreBroker @ NewConsole = true
+  Run = uFldShoreBroker @ NewConsole = false
   Run = uTimerScript    @ NewConsole = false
-  Run = pPointAssign    @ NewConsole = false
+  Run = pPointAssign    @ NewConsole = true
 }
 
 #include plug_pShare.moos
@@ -34,8 +34,10 @@ ProcessConfig = uFldShoreBroker
   AppTick       = 4
   CommsTick     = 4
 
-  //BRIDGE = src=VISIT_POINT_$(V1), alias = VISIT_POINT
-  //BRIDGE = src=VISIT_POINT_$(V2), alias = VISIT_POINT
+  qbridge  = NODE_REPORT
+  qbridge  = APPCAST_REQ
+  qbridge  = MOOS_MANUAL_OVERRIDE
+  qbridge  = DEPLOY
 
   bridge  = src=VISIT_POINT_$V, alias = VISIT_POINT
   bridge  = src=VIEW_POINT, alias = VIEW_POINT
@@ -56,15 +58,14 @@ ProcessConfig = pPointAssign
 
 ProcessConfig = uTimerScript
 {
-
   paused = true
 
   rand_var      = varname=RND_X, min=-25, max=200, key=at_post
   rand_var      = varname=RND_Y, min=-175, max =-25, key=at_post
 
-  event = var=VISIT_POINT, val="firstpoint", time=2
-  event = var=VISIT_POINT, val="x=$[RND_X], y=$[RND_Y], id=$[TCOUNT]", time=3, amt=100
-  event = var=VISIT_POINT, val="lastpoint", time=4
+  event = var=VISIT_POINT, val="firstpoint"
+  event = var=VISIT_POINT, val="x=$[RND_X], y=$[RND_Y], id=$[TCOUNT]", amt=100
+  event = var=VISIT_POINT, val="lastpoint"
 }
 
 //--------------------------------------------------------
@@ -89,4 +90,8 @@ ProcessConfig = pMarineViewer
   hash_viewable        = true
   hash_shade           = 0.35
 
+  scope = DEPLOY
+  
+  BUTTON_ONE   = DEPLOY # DEPLOY_ALL=true 
+  BUTTON_ONE   = MOOS_MANUAL_OVERRIDE_ALL=false 
 }
