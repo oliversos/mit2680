@@ -21,6 +21,7 @@ src/*
 !src/pCommunicationAngle/
 !src/pPointAssign/
 !src/pGenPath/
+!src/uFldHazardMgrX/
 
 
 scripts/
