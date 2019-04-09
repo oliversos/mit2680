@@ -59,6 +59,18 @@ HazardMgr::HazardMgr()
   m_name = "";
 
   m_last_msg_sent = 0;
+
+  // TODO: NEW
+  m_max_time               = 0;
+  m_mission_start_time     = 0; 
+  m_penalty.missed_hazard  = 0;
+  m_penalty.nonopt_hazard  = 0;
+  m_penalty.false_alarm    = 0;
+  m_penalty.max_time_over  = 0;
+  m_penalty.max_time_rate  = 0;
+
+  m_search_region_str = "";
+
 }
 
 //---------------------------------------------------------
@@ -141,6 +153,11 @@ bool HazardMgr::Iterate()
 
   if (MOOSTime() - m_last_msg_sent > 60.1){
     postHazardMessage();
+  }
+
+  // TODO: NEW
+  if( (MOOSTime() - m_mission_start_time) > m_max_time * 0.9){
+    // Meet up to merge reports and finish mission
   }
 
   AppCastingMOOSApp::PostReport();
@@ -362,7 +379,31 @@ void HazardMgr::handleMailMissionParams(string str)
   for(i=0; i<vsize; i++) {
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
-    // This needs to be handled by the developer. Just a placeholder.
+    
+    // TODO: NEW
+    if(param == "penalty_missed_hazard")
+      m_penalty.missed_hazard = stod(value);
+
+    if(param == "penalty_nonopt_hazard")
+      m_penalty.nonopt_hazard = stod(value);
+
+    if(param == "penalty_false_alarm")
+      m_penalty.false_alarm = stod(value);
+
+    if(param == "penalty_max_time_over")
+      m_penalty.max_time_over = stod(value);
+
+    if(param == "penalty_max_time_rate")
+      m_penalty.max_time_rate = stod(value);
+
+    if(param == "max_time")
+      m_max_time = stod(value);
+
+    if(param == "transit_path_width")
+      m_transit_path_width = stod(value);
+
+    if(param == "search_region")
+      m_search_region_str = value; //pts={-150,-75:-150,-400:400,-400:400,-75}
   }
 }
 

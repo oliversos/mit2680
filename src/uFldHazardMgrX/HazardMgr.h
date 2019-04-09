@@ -28,6 +28,11 @@
 #include "XYHazardSet.h"
 #include "XYPolygon.h"
 
+// TODO: NEW
+struct Penalty{
+   double missed_hazard, nonopt_hazard, false_alarm, max_time_over, max_time_rate;
+}; 
+
 class HazardMgr : public AppCastingMOOSApp
 {
  public:
@@ -94,6 +99,13 @@ class HazardMgr : public AppCastingMOOSApp
    XYHazardSet m_hazard_sent;    // the set of sent hazards, not add to msg
 
    std::string m_msg;            // stores the hazard message
+
+   // TODO: NEW
+   Penalty m_penalty;
+   double m_max_time;
+   double m_mission_start_time;
+   std::string m_search_region_str;
+
 };
 
 #endif 
