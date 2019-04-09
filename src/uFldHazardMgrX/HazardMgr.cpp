@@ -3,6 +3,7 @@
 /*    ORGN: Dept of Mechanical Eng / CSAIL, MIT Cambridge MA     */
 /*    FILE: HazardMgr.cpp                                        */
 /*    DATE: Apr 3rd 2019                                         */
+/*    EDIT: Apr 5rd 2019 (By Simen Sem Oevereng, MIT)            */
 /*                                                               */
 /* This file is part of MOOS-IvP                                 */
 /*                                                               */
@@ -30,6 +31,8 @@
 #include <time.h>
 
 using namespace std;
+
+const bool debug = true;
 
 //---------------------------------------------------------
 // Constructor
@@ -101,13 +104,15 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
       }
     }
 
-    else if (key == "HAZARD_REPORT")
+    else if (key == "HAZARD_REPORT"){
       handleHazardReport(sval);
+    }
+
 
     else 
       reportRunWarning("Unhandled Mail: " + key);
   }
-	
+  
    return(true);
 }
 
@@ -134,7 +139,7 @@ bool HazardMgr::Iterate()
   if(m_sensor_config_set)
     postSensorInfoRequest();
 
-  if (MOOSTime() - m_last_msg_sent > 60.5){
+  if (MOOSTime() - m_last_msg_sent > 60.1){
     postHazardMessage();
   }
 
@@ -179,7 +184,7 @@ bool HazardMgr::OnStartUp()
     else if(param == "region") {
       XYPolygon poly = string2Poly(value);
       if(poly.is_convex())
-	m_search_region = poly;
+  m_search_region = poly;
       handled = true;
     }
 
@@ -190,7 +195,7 @@ bool HazardMgr::OnStartUp()
   m_hazard_set.setName(m_report_name);
   m_hazard_set.setRegion(m_search_region);
   
-  registerVariables();	
+  registerVariables();  
   return(true);
 }
 
@@ -315,7 +320,7 @@ bool HazardMgr::handleMailDetectionReport(string str)
   event += ", x=" + doubleToString(new_hazard.getX(),1);
   event += ", y=" + doubleToString(new_hazard.getY(),1);
 
-  reportEvent(event);
+  TODO: reportEvent(event);
 
   string req = "vname=" + m_host_community + ",label=" + hazlabel;
   Notify("UHZ_CLASSIFY_REQUEST", req);
@@ -367,28 +372,37 @@ void HazardMgr::handleMailMissionParams(string str)
 
 bool HazardMgr::buildReport() 
 {
-  m_msgs << "Config Requested:"                                  << endl;
-  m_msgs << "    swath_width_desired: " << m_swath_width_desired << endl;
-  m_msgs << "             pd_desired: " << m_pd_desired          << endl;
-  m_msgs << "   config requests sent: " << m_sensor_config_reqs  << endl;
-  m_msgs << "                  acked: " << m_sensor_config_acks  << endl;
-  m_msgs << "------------------------ "                          << endl;
-  m_msgs << "Config Result:"                                     << endl;
-  m_msgs << "       config confirmed: " << boolToString(m_sensor_config_set) << endl;
-  m_msgs << "    swath_width_granted: " << m_swath_width_granted << endl;
-  m_msgs << "             pd_granted: " << m_pd_granted          << endl << endl;
-  m_msgs << "--------------------------------------------" << endl << endl;
+  if(!debug){
+    m_msgs << "Config Requested:"                                  << endl;
+    m_msgs << "    swath_width_desired: " << m_swath_width_desired << endl;
+    m_msgs << "             pd_desired: " << m_pd_desired          << endl;
+    m_msgs << "   config requests sent: " << m_sensor_config_reqs  << endl;
+    m_msgs << "                  acked: " << m_sensor_config_acks  << endl;
+    m_msgs << "------------------------ "                          << endl;
+    m_msgs << "Config Result:"                                     << endl;
+    m_msgs << "       config confirmed: " << boolToString(m_sensor_config_set) << endl;
+    m_msgs << "    swath_width_granted: " << m_swath_width_granted << endl;
+    m_msgs << "             pd_granted: " << m_pd_granted          << endl << endl;
+    m_msgs << "--------------------------------------------" << endl << endl;
 
-  m_msgs << "               sensor requests: " << m_sensor_report_reqs << endl;
-  m_msgs << "             detection reports: " << m_detection_reports  << endl << endl; 
+    m_msgs << "               sensor requests: " << m_sensor_report_reqs << endl;
+    m_msgs << "             detection reports: " << m_detection_reports  << endl << endl; 
 
-  m_msgs << "   Hazardset Reports Requested: " << m_summary_reports << endl;
-  m_msgs << "      Hazardset Reports Posted: " << m_summary_reports << endl;
-  m_msgs << "                   Report Name: " << m_report_name << endl;
+    m_msgs << "   Hazardset Reports Requested: " << m_summary_reports << endl;
+    m_msgs << "      Hazardset Reports Posted: " << m_summary_reports << endl;
+    m_msgs << "                   Report Name: " << m_report_name << endl;
+  }
 
   return(true);
 }
 
+
+//---------------------------------------------------------
+// Procedure: handleAddName(string)
+// PURPOSE:   finds the local vehicle's name for use in message sending
+// @param     str: a string of the name
+// @edits     m_name: member string with name
+// @return    no returns
 void HazardMgr::handleAddName(string str)
 {
   vector<string> report_list = parseString(str,',');
@@ -401,80 +415,119 @@ void HazardMgr::handleAddName(string str)
         name.at(i) = toupper(name.at(i));
       }   
       m_name = name;
+
+      // TODO: discuss this with oliver
+      // I would like a string_val as well, and something that needs to be updated if the size of string_val gets too long
+      m_msg += "src_node=" + m_name;
+      m_msg += ",dest_node=all";
+      m_msg += ",var_name=HAZARD_REPORT";
+      m_msg += ",string_val=";
+
       UnRegister("NODE_REPORT_LOCAL");
     }
   }
 }
 
+//---------------------------------------------------------
+// Procedure: postHazardMessage()
+// PURPOSE:   To update the output report string that is sent to shoreside and 
+//            other vehicles on which hazards that has been found by LOCAL
+// @param     no inputs
+// @edits     m_msg: member string for all reports
+// @return    no returns
 void HazardMgr::postHazardMessage()
 {
+  // TODO: moved into handleAddName()
+  /*
   string msg;
   msg += "src_node=" + m_name;
   msg += ",dest_node=all";
   msg += ",var_name=HAZARD_REPORT";
   msg += ",string_val=";
+  */
 
-  string added_msg; 
+  string added_msg; // message to be added upon the existing one
+  XYHazardSet unsent_hazards; // all hazards that has not been sent yet
 
-  XYHazardSet unsendt_hazards;
-
+  // Get each hazard, and check to see if it is already sent
+  // If not, then add to the set of unsent hazards
   for (unsigned int i = 0; i < m_hazard_set.size() ; i++){
     XYHazard current = m_hazard_set.getHazard(i);
     string label = current.getLabel();
-    if (!(m_hazard_sendt.hasHazard(label))){
-      unsendt_hazards.addHazard(current);
+
+    if (! (m_hazard_sent.hasHazard(label)) ){
+      unsent_hazards.addHazard(current);
     }
   } 
 
-  if (!(unsendt_hazards.size() == 0)){
-    for (unsigned int i = 0; i < unsendt_hazards.size(); i++){
-      XYHazard current = unsendt_hazards.getHazard(i);
-      added_msg = current.getSpec("");
-      if (msg.length() + added_msg.length() + 2 > 100) {
-        msg += "MORE";
+  // If we found unsent hazards, add it to output string
+  // TODO: Handle case where the output is too long for constraint of 100
+  if (!(unsent_hazards.size() == 0)){
+
+    // For all unsent, add specs to out member message string
+    // After adding to string, add it to set of sent hazards
+    for (unsigned int i = 0; i < unsent_hazards.size(); i++){
+      XYHazard current_unsent = unsent_hazards.getHazard(i);
+      added_msg = current_unsent.getSpec("");
+
+      // TODO remove false
+      // if message length is longer than 100 elements, tell by M 
+      // here, test must be changed for length of string_val
+      if (false && m_msg.length() + added_msg.length() + 2 > 100) {
+        m_msg += "M"; // TODO: her sto en ensom m_hazard_set
         break;
       }
-      msg += added_msg +"#" ;
-      m_hazard_sendt.addHazard(current);
+
+      added_msg += "#";
+      m_msg += added_msg;
+
+      m_hazard_sent.addHazard(current_unsent);
     }
   }
 
-  if (msg.find("MORE") != std::string::npos){
-    msg += "FINISHED";
+  // TODO: remove false
+  // TODO: this F has to be removed later in a string reading function, if m_msg is kept as member OR could be solved by Notify("NODE_MESSAGE_LOCAL",m_msg + "M");
+  if (false && m_msg.find("M") != std::string::npos){
+    m_msg += "F";
   }
 
-  Notify("NODE_MESSAGE_LOCAL",msg);
+  Notify("NODE_MESSAGE_LOCAL",m_msg);
   m_last_msg_sent = MOOSTime();
+
+  if(debug)
+    cout << "POSTED: " << m_msg << endl;
 }
 
+//---------------------------------------------------------
+// Procedure: handleHazardReport(string)
+// PURPOSE:   Handles an incoming hazard report
+// @param     str: a string with a hazard report
+// @edits     m_hazard_set, m_hazard_sent
+// @return    no returns
 void HazardMgr::handleHazardReport(string str)
 {
   Notify("WAIT_FOR_HAZARD","true");
   vector<string> received_hazards = parseString(str,'#');
   for (unsigned int i = 0 ; i < received_hazards.size() ; i++){
     string current = received_hazards[i];
-    if (current != "MORE" && current != "FINISHED"){
+
+    // TODO: maybe we have to control for "" here as well, since # might be put on the end of a message (I can see that such a situation should never occur in postMessage, but seems like god programmeringsskikk)
+
+    if (current != "M" && current != "F"){
       XYHazard new_hazard = string2Hazard(current);
       string label = new_hazard.getLabel();
+
+      // If the hazard is not in the LOCAL set of hazards, then we can add it to 
       if (!m_hazard_set.hasHazard(label)){
         m_hazard_set.addHazard(new_hazard);
-        m_hazard_sendt.addHazard(new_hazard);
+        m_hazard_sent.addHazard(new_hazard);
       }
-      if (current == "FINISHED"){
+
+      // All hazards has been received - stop waiting
+      // TODO: where is such a variable handled?
+      if (current == "F"){
         Notify("WAIT_FOR_HAZARD","false");
       }
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

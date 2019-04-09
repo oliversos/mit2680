@@ -58,6 +58,9 @@ class HazardMgr : public AppCastingMOOSApp
    void postSensorConfigRequest();
    void postSensorInfoRequest();
    void postHazardSetReport();
+
+
+   // self made
    void postHazardMessage();
    
  private: // Configuration variables
@@ -85,14 +88,15 @@ class HazardMgr : public AppCastingMOOSApp
    
    double      m_transit_path_width;
 
-   double m_last_msg_sent;
+   // self made
+   double m_last_msg_sent;       // time since last message
+   std::string m_name;           // name of current vehicle
+   XYHazardSet m_hazard_sent;    // the set of sent hazards, not add to msg
 
-   std::string m_name;
-   XYHazardSet m_hazard_sendt;
+   std::string m_msg;            // stores the hazard message
 };
 
 #endif 
-
 
 
 
