@@ -11,6 +11,8 @@ missions/*
 !missions/lab_07/
 !missions/lab_08/
 !missions/lab_09/
+!missions/lab_12/
+!missions/lab_13/
 missions/alder/*
 !missions/alder/alder_lab4.moos
 !missions/alder/alder_lab4.bhv
