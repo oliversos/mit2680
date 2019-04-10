@@ -102,7 +102,11 @@ Behavior = BHV_Waypoint
   visual_hints = vertex_color=yellow, edge_color=green
 
        endflag = SURVEY_2 = false
+<<<<<<< HEAD
        endflag = RETURN = true
+=======
+	endflag = RETURN = true
+>>>>>>> master
    
        updates = UPDATE_REGION_2
 
