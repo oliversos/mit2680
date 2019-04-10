@@ -34,3 +34,4 @@ class Classification{
       bool m_shared;   // stores if classification is sent to collaborator
 };
 #endif 
+

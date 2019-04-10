@@ -76,6 +76,8 @@ HazardMgr::HazardMgr()
 
   m_search_region_str = "";
 
+  m_pclass = 1;
+
 }
 
 //---------------------------------------------------------
@@ -168,6 +170,7 @@ bool HazardMgr::Iterate()
 
   if(m_sensor_config_set)
     postSensorInfoRequest();
+
   if ((MOOSTime() - m_last_msg_sent > 61) && m_send_report){
     postHazardMessage();
   }
@@ -293,6 +296,7 @@ bool HazardMgr::handleMailSensorConfigAck(string str)
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
 
+    // TODO: Store pclass as member variable
     if(param == "vname")
       vname = value;
     else if(param == "pd")
@@ -427,12 +431,6 @@ void HazardMgr::handleMailMissionParams(string str)
   }
 }
 
-// TODO: NEW
-//---------------------------------------------------------
-// Procedure: handleMailMissionParams
-// Purpose:   deals with incoming classification reports from UHZ that the 
-//            vehicle has requested classification on
-//            Example str: "label=12,type=benign"
 // TODO: NEW
 //---------------------------------------------------------
 // Procedure: handleMailMissionParams
