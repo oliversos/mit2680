@@ -1,1 +1,0 @@
-/usr/bin/c++   -fPIC -g  -rdynamic CMakeFiles/pGenPath.dir/GenPath.cpp.o CMakeFiles/pGenPath.dir/GenPath_Info.cpp.o CMakeFiles/pGenPath.dir/main.cpp.o CMakeFiles/pGenPath.dir/__/pPointAssign/Point.cpp.o  -o ../../../bin/pGenPath  -L/home/simen/moos-ivp/lib -Wl,-rpath,/home/simen/moos-ivp/lib /home/simen/moos-ivp/build/MOOS/MOOSCore/lib/libMOOS.a -lgeometry -lmbutil -lm -lpthread 
