@@ -2,11 +2,24 @@
 // SIMEN SEM OEVERENG
 
 #include "Classification.h"
+#include <sstream>
+#include <iomanip>
 using namespace std;
 
 // Returns a string of the classification (currently without showing if it has been shared or not). Used mainly for debugging purposes.
 string Classification::printClassification(){
-  return(to_string(m_label) + "_" + to_string(m_hazard) + "_" + to_string(m_prob));
+	string out = "id=";
+	out += to_string(m_label);
+	out += ".p=";
+	stringstream ss;
+	ss << std::setprecision(3) << m_prob;
+	out += ss.str();	
+	out += ".t=";
+	if (m_hazard)
+		out += "h";
+	else
+		out += "b";
+  return out;
 }
 
 // Calculate probability of object being a hazard based on new classification received and the certainty of that classification. Only called if object already has been classified once.
