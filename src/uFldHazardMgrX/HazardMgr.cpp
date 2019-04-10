@@ -474,13 +474,15 @@ void HazardMgr::handleClassificationReport(string str){
           // TODO: calculate new prob, e.g.  getProb*getProb so low probabilities will get really low 
           (*it).calculateProb(haz,m_pclass);
           Notify("TESTCLASS", (*it).printClassification() );
-        }
-        else{
-          // Not classified before - add to vector
-          m_classifications.push_back(c);
-          Notify("TESTCLASS", c.printClassification() );
+          return;
         }
       } // for all former classifications
+      
+      // Not classified before - add to vector
+      m_classifications.push_back(c);
+      Notify("TESTCLASS", c.printClassification() );
+      
+      
     } // if we have got a labal and a type
   } // for all elements in current string
 } // func
