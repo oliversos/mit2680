@@ -432,12 +432,6 @@ void HazardMgr::handleMailMissionParams(string str)
 // Purpose:   deals with incoming classification reports from UHZ that the 
 //            vehicle has requested classification on
 //            Example str: "label=12,type=benign"
-// TODO: NEW
-//---------------------------------------------------------
-// Procedure: handleMailMissionParams
-// Purpose:   deals with incoming classification reports from UHZ that the 
-//            vehicle has requested classification on
-//            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
   vector<string> svector = parseString(str, ',');
   int lab = -1;
