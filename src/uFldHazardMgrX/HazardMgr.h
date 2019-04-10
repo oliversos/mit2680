@@ -67,9 +67,12 @@ class HazardMgr : public AppCastingMOOSApp
    void postSensorInfoRequest();
    void postHazardSetReport();
 
-
    // self made
    void postHazardMessage();
+
+   // TODO: NEW
+   void handleClassificationReport(std::string);
+
    
  private: // Configuration variables
    double      m_swath_width_desired;
