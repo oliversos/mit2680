@@ -134,7 +134,10 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
     else if(key == "UHZ_HAZARD_REPORT"){
       handleClassificationReport(sval);
     }
-    
+
+    else if(key == "RETURN"){
+      decideHazards();
+    }
     else{
       reportRunWarning("Unhandled Mail: " + key);
     }
@@ -243,6 +246,7 @@ void HazardMgr::registerVariables()
   Register("NODE_REPORT_LOCAL",0);
   Register("HAZ_REP",0);
   Register("UHZ_HAZARD_REPORT",0);
+  Register("RETURN",0);
 }
 
 //---------------------------------------------------------
@@ -466,7 +470,6 @@ void HazardMgr::handleClassificationReport(string str){
 
     // Create and object to compare with our current list as if it was the very first observation. We are pclass certain of haz being what it is
     updateClassification(lab,m_pclass,haz,false);
-
     // Add classification to member vector of classifications
     // If it already exists, then compute new probability based on old classification vs. new one
   } // if we have got a labal and a type
@@ -553,7 +556,7 @@ void HazardMgr::postHazardMessage()
   for (unsigned int i = 0; i < m_classifications.size(); i++){
     if (!m_classifications[i].getShared()){
       added_msg = m_classifications[i].printClassification();
-      if (!(added_msg.length() + haz_msg.length() + 2 > 100)){
+      if (!(added_msg.length() + haz_msg.length() + 1 > 100)){
         haz_msg += added_msg;
         haz_msg += "#";
         m_classifications[i].setShared(true);
@@ -639,9 +642,6 @@ void HazardMgr::postHazardMessage()
 
   // TODO: remove false
   // TODO: this F has to be removed later in a string reading function, if m_msg is kept as member OR could be solved by Notify("NODE_MESSAGE_LOCAL",m_msg + "M");
-  if (sending == 0){
-    sending_msg += "F";
-  }
   Notify("HAZ_MSSG",haz_msg);
   Notify("NODE_MESSAGE_LOCAL",sending_msg);
   m_last_msg_sent = MOOSTime();
