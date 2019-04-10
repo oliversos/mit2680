@@ -28,6 +28,14 @@
 #include "XYPolygon.h"
 #include "NodeMessage.h"
 
+// TODO: NEW
+#include <vector>
+#include "Classification.h"
+
+struct Penalty{
+   double missed_hazard, nonopt_hazard, false_alarm, max_time_over, max_time_rate;
+}; 
+
 class HazardMgr : public AppCastingMOOSApp
 {
  public:
@@ -59,9 +67,12 @@ class HazardMgr : public AppCastingMOOSApp
    void postSensorInfoRequest();
    void postHazardSetReport();
 
-
    // self made
    void postHazardMessage();
+
+   // TODO: NEW
+   void handleClassificationReport(std::string);
+
    
  private: // Configuration variables
    double      m_swath_width_desired;
@@ -96,7 +107,13 @@ class HazardMgr : public AppCastingMOOSApp
 
    std::string m_msg;            // stores the hazard message
 
-   std::map<std::string,int> m_probabilities;
+   // TODO: NEW
+   Penalty m_penalty;
+   double m_max_time;
+   double m_mission_start_time;
+   std::string m_search_region_str;
+   std::vector<Classification> m_classifications; // (label,classific,prob)
+
 };
 
 #endif 
