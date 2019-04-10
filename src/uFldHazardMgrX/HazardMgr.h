@@ -114,6 +114,7 @@ class HazardMgr : public AppCastingMOOSApp
    std::string m_search_region_str;
    std::vector<Classification> m_classifications; // (label,classific,prob)
 
+   double m_pclass;
 };
 
 #endif 

@@ -74,6 +74,8 @@ HazardMgr::HazardMgr()
 
   m_search_region_str = "";
 
+  m_pclass = 1;
+
 }
 
 //---------------------------------------------------------
@@ -163,6 +165,7 @@ bool HazardMgr::Iterate()
 
   if(m_sensor_config_set)
     postSensorInfoRequest();
+
   if ((MOOSTime() - m_last_msg_sent > 61) && m_send_report){
     postHazardMessage();
   }
@@ -287,6 +290,7 @@ bool HazardMgr::handleMailSensorConfigAck(string str)
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
 
+    // TODO: Store pclass as member variable
     if(param == "vname")
       vname = value;
     else if(param == "pd")
@@ -295,8 +299,10 @@ bool HazardMgr::handleMailSensorConfigAck(string str)
       width = value;
     else if(param == "pfa")
       pfa = value;
-    else if(param == "pclass")
+    else if(param == "pclass"){
       pclass = value;
+      m_pclass = stod(value); // ADDED APR 10
+    }
     else
       valid_msg = false;       
 
@@ -426,7 +432,7 @@ void HazardMgr::handleMailMissionParams(string str)
 //            vehicle has requested classification on
 //            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
-  vector<string> svector = parseStringZ(str, ',', "{");
+  vector<string> svector = parseString(str, ',');
   int lab = -1;
   string haz_str = "";
   bool haz = false;
@@ -452,8 +458,8 @@ void HazardMgr::handleClassificationReport(string str){
         haz = true;
       }
 
-      // TODO: needs to add probability somehow
-      Classification c(lab,haz);
+      // Create and object to compare with our current list as if it was the very first observation. We are pclass certain of haz being what it is
+      Classification c(lab,haz,m_pclass,false);
 
       // Add classification to member vector of classifications
       // If it already exists, then compute new probability based on old classification vs. new one
@@ -461,12 +467,15 @@ void HazardMgr::handleClassificationReport(string str){
       for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
         if( (*it).getLabel() == lab){
           // TODO: calculate new prob, e.g.  getProb*getProb so low probabilities will get really low 
-          c.setProb(c.getProb() * c.getProb());
+          (*it).calculateProb(haz,m_pclass);
+          Notify("TESTCLASS", (*it).printClassification() );
+          return;
         }
-        else{
-          // Not classified before - add to vector
-          m_classifications.push_back(c);
-        }
+
+      // Not classified before - add to vector
+      m_classifications.push_back(c);
+      Notify("TESTCLASS", c.printClassification() );
+
       } // for all former classifications
     } // if we have got a labal and a type
   } // for all elements in current string
