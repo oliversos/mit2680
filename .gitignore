@@ -2,7 +2,6 @@
 #src/*
 #!src/pOdometry/*
 
-clean.sh
 .svn/
 
 # adding relevant mission files to git in deeper folders
