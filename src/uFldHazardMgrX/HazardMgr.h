@@ -1,8 +1,8 @@
 /*****************************************************************/
-/*    NAME: Michael Benjamin                                     */
+/*    NAME: Oliver Os                                    */
 /*    ORGN: Dept of Mechanical Eng / CSAIL, MIT Cambridge MA     */
 /*    FILE: HazardMgr.h                                          */
-/*    DATE: Oct 26th 2012                                        */
+/*    DATE: Apr 10 2019                                       */
 /*                                                               */
 /* This file is part of MOOS-IvP                                 */
 /*                                                               */
