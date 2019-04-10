@@ -603,11 +603,4 @@ void HazardMgr::handleHazardReport(string str)
       // TODO: where is such a variable handled?
     }
   }
-  /*
-  char ch = str.back();
-  if (ch == 'F'){
-    Notify("SHARE","false");
-    Notify("RETURN","true");
-  }
-  */
 }
