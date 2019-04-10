@@ -240,6 +240,7 @@ void HazardMgr::registerVariables()
   Register("HAZARDSET_REQUEST", 0);
   Register("NODE_REPORT_LOCAL",0);
   Register("HAZ_REP",0);
+  Register("UHZ_HAZARD_REPORT",0);
 }
 
 //---------------------------------------------------------
