@@ -133,6 +133,7 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
 
     // TODO: This message never arrives anywhere
     else if(key == "UHZ_HAZARD_REPORT"){
+      Notify("TESTCLASS", "hei");
       handleClassificationReport(sval);
     }
     
@@ -433,6 +434,7 @@ void HazardMgr::handleMailMissionParams(string str)
 //            vehicle has requested classification on
 //            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
+  Notify("TESTCLASS", "sdfasd" );
   vector<string> svector = parseString(str, ',');
   int lab = -1;
   string haz_str = "";
