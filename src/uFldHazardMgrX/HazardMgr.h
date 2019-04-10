@@ -73,6 +73,13 @@ class HazardMgr : public AppCastingMOOSApp
    // TODO: NEW
    void handleClassificationReport(std::string);
 
+   void setClassificationStatus(int,bool);
+   bool classificationExist(int);
+   void updateClassification(int,double,bool,bool);
+
+
+
+
    
  private: // Configuration variables
    double      m_swath_width_desired;
@@ -112,7 +119,7 @@ class HazardMgr : public AppCastingMOOSApp
    double m_max_time;
    double m_mission_start_time;
    std::string m_search_region_str;
-   std::vector<Classification> m_classifications; // (label,classific,prob)
+   std::vector<Classification> m_classifications; 
 
    double m_pclass;
 };
