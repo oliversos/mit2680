@@ -8,13 +8,13 @@ using namespace std;
 
 // Returns a string of the classification (currently without showing if it has been shared or not). Used mainly for debugging purposes.
 string Classification::printClassification(){
-	string out = "id=";
+	string out = "l=";
 	out += to_string(m_label);
-	out += ".p=";
+	out += "_p=";
 	stringstream ss;
 	ss << std::setprecision(3) << m_prob;
 	out += ss.str();	
-	out += ".t=";
+	out += "_t=";
 	if (m_hazard)
 		out += "h";
 	else

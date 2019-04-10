@@ -29,6 +29,7 @@
 #include "XYFormatUtilsPoly.h"
 #include "ACTable.h"
 #include <time.h>
+#include <sstream>
 
 #include <string>
 #include <algorithm> // for std::sort()
@@ -434,6 +435,7 @@ void HazardMgr::handleMailMissionParams(string str)
 //            vehicle has requested classification on
 //            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
+  Notify("Stringvalue",str);
   vector<string> svector = parseString(str, ',');
   int lab = -1;
   string haz_str = "";
@@ -443,48 +445,32 @@ void HazardMgr::handleClassificationReport(string str){
   for(unsigned int i=0; i<vsize; i++) {
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
-    Notify("PARAM",param);
-    Notify("VALUE",value);
 
     // TODO: NEW
     if(param == "label"){
-      lab = stod(value);
+      lab = stoi(value);
     }
 
     if(param == "type"){
       haz_str = value;
     }
+  }
 
-    if(lab != -1 && !haz_str.empty()){
-      if(haz_str == "benign"){
-        haz = false;
-      } else{
-        haz = true;
-      }
+  if(lab != -1 && !haz_str.empty()){
+    if(haz_str == "benign"){
+      haz = false;
+    } else{
+      haz = true;
+    }
 
-      // Create and object to compare with our current list as if it was the very first observation. We are pclass certain of haz being what it is
-      Classification c(lab,haz,m_pclass,false);
+    // Create and object to compare with our current list as if it was the very first observation. We are pclass certain of haz being what it is
+    updateClassification(lab,m_pclass,haz,false);
 
-      // Add classification to member vector of classifications
-      // If it already exists, then compute new probability based on old classification vs. new one
-      vector<Classification>::iterator it;
-      for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
-        if( (*it).getLabel() == lab){
-          // TODO: calculate new prob, e.g.  getProb*getProb so low probabilities will get really low 
-          (*it).calculateProb(haz,m_pclass);
-          Notify("TESTCLASS", "Calculated prob");
-          return;
-        }
-      } // for all former classifications
-      
-      // Not classified before - add to vector
-      m_classifications.push_back(c);
-      Notify("TESTCLASS", "Added classification" );
-      
-      
-    } // if we have got a labal and a type
-  } // for all elements in current string
-} // func
+    // Add classification to member vector of classifications
+    // If it already exists, then compute new probability based on old classification vs. new one
+  } // if we have got a labal and a type
+} // for all elements in current string
+  // func
 
 
 
@@ -571,6 +557,9 @@ void HazardMgr::postHazardMessage()
         haz_msg += "#";
         m_classifications[i].setShared(true);
       }
+      else{
+        return;
+      }
     }
   }
 
@@ -609,17 +598,17 @@ void HazardMgr::postHazardMessage()
         if (type == "x"){
           info += "x=";
           info += orig;
-          info += ".";
+          info += "_";
         }
         if (type == "y"){
           info += "y=";
           info += orig;
-          info += ".";
+          info += "_";
         }
         if (type == "label"){
           info += "l=";
           info += orig;
-          info += ".";
+          info += "_";
         }
         if (type == "type"){
           info += "t=";
@@ -652,7 +641,7 @@ void HazardMgr::postHazardMessage()
   if (sending == 0){
     sending_msg += "F";
   }
-
+  Notify("HAZ_MSSG",haz_msg);
   Notify("NODE_MESSAGE_LOCAL",sending_msg);
   m_last_msg_sent = MOOSTime();
 
@@ -682,16 +671,14 @@ void HazardMgr::handleHazardReport(string str)
 
     if (current != "M" && current != "F"){
       string info;
-      vector <string> haz_info = parseString(current,'.');
+      vector <string> haz_info = parseString(current,'_');
 
       int length = haz_info.size();
+      if (length == 4){
+        for(unsigned int i = 0; i < length; i++){ 
 
-      for(unsigned int i = 0; i < length; i++){ 
-
-        string orig = haz_info[i];
-        string type = biteStringX(orig,'=');
-
-        if (length == 4){
+          string orig = haz_info[i];
+          string type = biteStringX(orig,'=');
 
           if (type == "x"){
             info += "x=";
@@ -728,16 +715,21 @@ void HazardMgr::handleHazardReport(string str)
             m_hazard_sent.addHazard(new_hazard);
           }
         }
+      }
 
-        if (length == 3){
-          int id = -1;
-          double p;
-          bool t;
-          if (type == "id"){
+      if (length == 3){
+        int id = -1;
+        double p;
+        bool t;
+        for (unsigned int i = 0 ; i < length ; i++){
+          string orig = haz_info[i];
+          string type = biteStringX(orig,'=');
+          if (type == "l"){
             id = stoi(orig);
           }
           if (type == "p"){
             p = stod(orig);
+            Notify("P_UPDATE",p);
           }
           if (type == "c"){
             if (orig == "h"){
@@ -747,12 +739,13 @@ void HazardMgr::handleHazardReport(string str)
               t = false;
             }
           }
-          updateClassification(id,p,t,true);
         }
+        Notify("BEFORE_UPDATE",p);
+        updateClassification(id,p,t,true);
       }
+    }
       // All hazards has been received - stop waiting
       // TODO: where is such a variable handled?
-    }
   }
 }
 
@@ -791,17 +784,25 @@ bool HazardMgr::classificationExist(int id)
 
 void HazardMgr::updateClassification(int id, double prob, bool newClass, bool recieved)
 {
+  stringstream ss;
+  ss << std::setprecision(3);
+  ss << "id:" << id << ", prob:"; 
   if (classificationExist(id)){
     for (unsigned int i = 0; i < m_classifications.size(); i++){
       if (m_classifications[i].getLabel() == id){
         m_classifications[i].calculateProb(newClass,prob);
         m_classifications[i].setShared(recieved);
+        ss << std::setprecision(3) << m_classifications[i].getProb();
+        Notify("CLASSIFICATION_UPDATE",ss.str());
+        break;
       }
     }
   }
   else{
     Classification newClassification(id,newClass,prob,recieved);
     m_classifications.push_back(newClassification);
+    ss << prob;
+    Notify("CLASSIFICATION_ADD",ss.str());
   }
 }
 
