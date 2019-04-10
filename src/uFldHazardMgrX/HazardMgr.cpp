@@ -31,6 +31,7 @@
 #include <time.h>
 
 #include <string>
+#include <algorithm> // for std::sort()
 
 using namespace std;
 
@@ -822,3 +823,25 @@ bool HazardMgr::isUnsentClassification(int id)
 {
 
 }*/
+
+
+
+// sorts m_classifications based on probabilities, order decided from bool
+void HazardMgr::sortClassifications(bool dir = true){
+  std::sort(m_classifications.begin(),m_classifications.end());
+}
+
+string HazardMgr::sortedClassificationsToString(){
+  sortClassifications(true);
+
+  string out_msg = "";
+
+  std::vector<Classification>::iterator it;
+  for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
+    if(it == m_classifications.begin())
+      out_msg += (*it).printClassification();
+    else
+      out_msg += " - " + (*it).printClassification();    
+  }
+  return(out_msg);
+}

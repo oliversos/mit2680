@@ -77,6 +77,11 @@ class HazardMgr : public AppCastingMOOSApp
    bool classificationExist(int);
    void updateClassification(int,double,bool,bool);
 
+   // sorts m_classifications based on probabilities, from smallest to largest
+   void sortClassifications(bool);
+
+   std::string sortedClassificationsToString();
+
 
 
 
