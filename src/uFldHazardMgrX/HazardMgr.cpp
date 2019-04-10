@@ -377,7 +377,12 @@ void HazardMgr::handleMailReportRequest()
   m_hazard_set.findMinXPath(20);
   //unsigned int count    = m_hazard_set.findMinXPath(20);
   string summary_report = m_hazard_set.getSpec("final_report");
-  
+
+  Notify("TESTREP0",summary_report);
+  summary_report = decideHazards();
+  Notify("TESTREP1",decideHazards());
+  Notify("TESTREP3",sortedClassificationsToString());
+
   Notify("HAZARDSET_REPORT", summary_report);
 }
 
@@ -842,7 +847,71 @@ string HazardMgr::sortedClassificationsToString(){
     if(it == m_classifications.begin())
       out_msg += (*it).printClassification();
     else
-      out_msg += " - " + (*it).printClassification();    
+      out_msg += "-" + (*it).printClassification();    
   }
   return(out_msg);
+}
+
+
+
+bool HazardMgr::decisionRule(Classification c){
+    // TODO: Update this parameter as a decision rule
+    double p = 0.5;
+
+    if(c.getProb() > p){
+      return(true);
+    }
+    return(false);
+}
+
+string HazardMgr::createHazardString(Classification c){
+
+  // By current label, get spec from classification object
+  string label = to_string(c.getLabel());
+  int index = m_hazard_set.findHazard(label); 
+  XYHazard new_hazard = m_hazard_set.getHazard(index);
+  return(new_hazard.getSpec(""));
+}
+
+
+string HazardMgr::decideHazards(){
+
+  sortClassifications(true);
+
+  XYHazardSet new_set;
+  new_set.setSource(m_host_community);
+  new_set.setName(m_report_name);
+  new_set.setRegion(m_search_region);
+
+  vector<Classification>::iterator it;
+  for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
+    
+    if( decisionRule((*it)) ){
+      
+      // Use getSpec to create inputstring to string2Hazard from classification
+      string str = createHazardString((*it));
+      XYHazard new_hazard = string2Hazard(str);
+
+      // Setting type to make sure of that we are reporting this as hazard
+      new_hazard.setType("hazard");
+      string hazlabel = new_hazard.getLabel();
+      
+      // TODO: Uneccessary check?
+      if(hazlabel == "") {
+        reportRunWarning("Add hazard in decideHazards() w/out label");
+        return("");
+      }
+
+      // Add / overwrite XYHazard to new_set
+      int ix = new_set.findHazard(hazlabel);
+      if(ix == -1)
+        new_set.addHazard(new_hazard);
+      else{
+        // Overwrite if already in the set, but perhaps as a benign
+        new_set.setHazard(ix, new_hazard);
+      }
+    }
+  }
+
+  return(new_set.getSpec("final_report"));
 }

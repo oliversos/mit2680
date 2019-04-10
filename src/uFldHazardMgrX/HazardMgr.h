@@ -82,7 +82,9 @@ class HazardMgr : public AppCastingMOOSApp
 
    std::string sortedClassificationsToString();
 
-
+   bool decisionRule(Classification c);
+   string createHazardString(Classification c);
+   string decideHazards();
 
 
    
