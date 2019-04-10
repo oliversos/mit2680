@@ -55,7 +55,7 @@ HazardMgr::HazardMgr()
   m_sensor_config_acks = 0;
   m_sensor_report_reqs = 0;
   m_detection_reports  = 0;
-  m_send_report = false;
+  m_send_report = true;
 
   m_summary_reports = 0;
 
@@ -622,7 +622,6 @@ void HazardMgr::postHazardMessage()
   // TODO: this F has to be removed later in a string reading function, if m_msg is kept as member OR could be solved by Notify("NODE_MESSAGE_LOCAL",m_msg + "M");
   if (sending == 0){
     sending_msg += "F";
-    m_send_report = false;
   }
 
   Notify("NODE_MESSAGE_LOCAL",sending_msg);
@@ -701,10 +700,11 @@ void HazardMgr::handleHazardReport(string str)
       // TODO: where is such a variable handled?
     }
   }
-
+  /*
   char ch = str.back();
   if (ch == 'F'){
     Notify("SHARE","false");
     Notify("RETURN","true");
   }
+  */
 }
