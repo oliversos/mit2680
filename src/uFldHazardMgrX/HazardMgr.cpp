@@ -473,7 +473,7 @@ void HazardMgr::handleClassificationReport(string str){
         if( (*it).getLabel() == lab){
           // TODO: calculate new prob, e.g.  getProb*getProb so low probabilities will get really low 
           (*it).calculateProb(haz,m_pclass);
-          Notify("TESTCLASS", (*it).printClassification() );
+          Notify("TESTCLASS", "Calculated prob");
           return;
         }
 
@@ -485,7 +485,7 @@ void HazardMgr::handleClassificationReport(string str){
       
       // Not classified before - add to vector
       m_classifications.push_back(c);
-      Notify("TESTCLASS", c.printClassification() );
+      Notify("TESTCLASS", "Added classification" );
       
       
     } // if we have got a labal and a type
@@ -568,6 +568,17 @@ void HazardMgr::postHazardMessage()
   string added_msg; // message to be added upon the existing one
 
   string haz_msg;// Message to be sent as haz_rep
+
+  for (unsigned int i = 0; i < m_classifications.size(); i++){
+    if (!m_classifications[i].getShared()){
+      added_msg = m_classifications[i].printClassification();
+      if (!(added_msg.length() + haz_msg.length() + 2 > 100)){
+        haz_msg += added_msg;
+        haz_msg += "#";
+        m_classifications[i].setShared(true);
+      }
+    }
+  }
 
   XYHazardSet unsent_hazards; // all hazards that has not been sent yet
 
