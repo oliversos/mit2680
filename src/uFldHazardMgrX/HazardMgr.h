@@ -23,10 +23,10 @@
 
 #ifndef UFLD_HAZARD_MGR_HEADER
 #define UFLD_HAZARD_MGR_HEADER
-
 #include "MOOS/libMOOS/Thirdparty/AppCasting/AppCastingMOOSApp.h"
 #include "XYHazardSet.h"
 #include "XYPolygon.h"
+#include "NodeMessage.h"
 
 // TODO: NEW
 #include <vector>
@@ -82,6 +82,7 @@ class HazardMgr : public AppCastingMOOSApp
  private: // State variables
    bool   m_sensor_config_requested;
    bool   m_sensor_config_set;
+   bool   m_send_report;
 
    unsigned int m_sensor_config_reqs;
    unsigned int m_sensor_config_acks;

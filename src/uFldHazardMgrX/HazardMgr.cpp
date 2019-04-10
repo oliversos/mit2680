@@ -55,6 +55,7 @@ HazardMgr::HazardMgr()
   m_sensor_config_acks = 0;
   m_sensor_report_reqs = 0;
   m_detection_reports  = 0;
+  m_send_report = false;
 
   m_summary_reports = 0;
 
@@ -123,7 +124,7 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
       }
     }
 
-    else if(key == "HAZ_REP"){
+    else if (key == "HAZ_REP"){
       handleHazardReport(sval);
     }
 
@@ -162,8 +163,7 @@ bool HazardMgr::Iterate()
 
   if(m_sensor_config_set)
     postSensorInfoRequest();
-
-  if (MOOSTime() - m_last_msg_sent > 60.1){
+  if ((MOOSTime() - m_last_msg_sent > 61) && m_send_report){
     postHazardMessage();
   }
 
@@ -348,7 +348,7 @@ bool HazardMgr::handleMailDetectionReport(string str)
   event += ", x=" + doubleToString(new_hazard.getX(),1);
   event += ", y=" + doubleToString(new_hazard.getY(),1);
 
-  TODO: reportEvent(event);
+  //TODO: reportEvent(event);
 
   string req = "vname=" + m_host_community + ",label=" + hazlabel;
   Notify("UHZ_CLASSIFY_REQUEST", req);
@@ -519,13 +519,6 @@ void HazardMgr::handleAddName(string str)
       }   
       m_name = name;
 
-      // TODO: discuss this with oliver
-      // I would like a string_val as well, and something that needs to be updated if the size of string_val gets too long
-      m_msg += "src_node=" + m_name;
-      m_msg += ",dest_node=all";
-      m_msg += ",var_name=HAZ_REP";
-      m_msg += ",string_val=";
-
       UnRegister("NODE_REPORT_LOCAL");
     }
   }
@@ -540,17 +533,20 @@ void HazardMgr::handleAddName(string str)
 // @return    no returns
 void HazardMgr::postHazardMessage()
 {
-  // TODO: moved into handleAddName()
-  /*
-  string msg;
-  msg += "src_node=" + m_name;
-  msg += ",dest_node=all";
-  msg += ",var_name=HAZ_REP";
-  msg += ",string_val=";
-  */
+
+  string sending_msg; //This is the total message to be sent to the )collaborator
+  sending_msg += "src_node=" + m_name;
+  sending_msg += ",dest_node=all";
+  sending_msg += ",var_name=HAZ_REP";
+  sending_msg += ",string_val=";
 
   string added_msg; // message to be added upon the existing one
+
   XYHazardSet unsent_hazards; // all hazards that has not been sent yet
+
+  string haz_msg;// Message to be sent as haz_rep
+
+  int sending = 0;
 
   // Get each hazard, and check to see if it is already sent
   // If not, then add to the set of unsent hazards
@@ -560,45 +556,79 @@ void HazardMgr::postHazardMessage()
 
     if (! (m_hazard_sent.hasHazard(label)) ){
       unsent_hazards.addHazard(current);
+      sending ++;
     }
   } 
 
   // If we found unsent hazards, add it to output string
   // TODO: Handle case where the output is too long for constraint of 100
-  if (!(unsent_hazards.size() == 0)){
+  if (sending > 0){
 
     // For all unsent, add specs to out member message string
     // After adding to string, add it to set of sent hazards
-    for (unsigned int i = 0; i < unsent_hazards.size(); i++){
+    for (unsigned int i = 0; i < sending; i++){
       XYHazard current_unsent = unsent_hazards.getHazard(i);
-      added_msg = current_unsent.getSpec("");
+      string add_msg = current_unsent.getSpec("");
 
+      vector<string> info_vector = parseString(add_msg, ',');
+      string info;
+      for(unsigned int i = 0; i < 4; i++){ 
+        string orig = info_vector[i];
+        string type = biteStringX(orig,'=');
+
+        if (type == "x"){
+          info += "x=";
+          info += orig;
+          info += ".";
+        }
+        if (type == "y"){
+          info += "y=";
+          info += orig;
+          info += ".";
+        }
+        if (type == "label"){
+          info += "l=";
+          info += orig;
+          info += ".";
+        }
+        if (type == "type"){
+          info += "t=";
+          if (orig == "hazard"){
+            orig = "h";
+          }
+          else{
+            orig = "b";
+          }
+          info += orig;
+        }
+      }
       // TODO remove false
       // if message length is longer than 100 elements, tell by M 
       // here, test must be changed for length of string_val
-      if (false && m_msg.length() + added_msg.length() + 2 > 100) {
-        m_msg += "M"; // TODO: her sto en ensom m_hazard_set
+      if (haz_msg.length() + info.length() + 2 > 100) {
         break;
       }
 
-      added_msg += "#";
-      m_msg += added_msg;
-
+      info += "#";
+      haz_msg += info;
       m_hazard_sent.addHazard(current_unsent);
+      sending --;
     }
+    sending_msg += haz_msg;
   }
 
   // TODO: remove false
   // TODO: this F has to be removed later in a string reading function, if m_msg is kept as member OR could be solved by Notify("NODE_MESSAGE_LOCAL",m_msg + "M");
-  if (false && m_msg.find("M") != std::string::npos){
-    m_msg += "F";
+  if (sending == 0){
+    sending_msg += "F";
+    m_send_report = false;
   }
 
-  Notify("NODE_MESSAGE_LOCAL",m_msg);
+  Notify("NODE_MESSAGE_LOCAL",sending_msg);
   m_last_msg_sent = MOOSTime();
 
   if(debug)
-    cout << "POSTED: " << m_msg << endl;
+    cout << "POSTED: " << sending_msg << endl;
 }
 
 //---------------------------------------------------------
@@ -609,15 +639,55 @@ void HazardMgr::postHazardMessage()
 // @return    no returns
 void HazardMgr::handleHazardReport(string str)
 {
-  Notify("WAIT_FOR_HAZARD","true");
-  vector<string> received_hazards = parseString(str,'#');
+  char c = str.back();
+  if (c == '#'){
+    str.pop_back();
+  }
+  Notify("ALL_HAZ",str);
+  vector<string> received_hazards = parseString(str,"#");
+
   for (unsigned int i = 0 ; i < received_hazards.size() ; i++){
     string current = received_hazards[i];
 
     // TODO: maybe we have to control for "" here as well, since # might be put on the end of a message (I can see that such a situation should never occur in postMessage, but seems like god programmeringsskikk)
 
     if (current != "M" && current != "F"){
-      XYHazard new_hazard = string2Hazard(current);
+      string info;
+      vector <string> haz_info = parseString(current,'.');
+
+      for(unsigned int i = 0; i < 4; i++){ 
+
+        string orig = haz_info[i];
+        string type = biteStringX(orig,'=');
+
+        if (type == "x"){
+          info += "x=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "y"){
+          info += "y=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "l"){
+          info += "label=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "t"){
+          info += "type=";
+          if (orig == "h"){
+            orig = "hazard";
+          }
+          else{
+            orig = "benign";
+          }
+          info += orig;
+        }
+      }
+
+      XYHazard new_hazard = string2Hazard(info);
       string label = new_hazard.getLabel();
 
       // If the hazard is not in the LOCAL set of hazards, then we can add it to 
@@ -628,9 +698,12 @@ void HazardMgr::handleHazardReport(string str)
 
       // All hazards has been received - stop waiting
       // TODO: where is such a variable handled?
-      if (current == "F"){
-        Notify("WAIT_FOR_HAZARD","false");
-      }
     }
+  }
+
+  char ch = str.back();
+  if (ch == 'F'){
+    Notify("SHARE","false");
+    Notify("RETURN","true");
   }
 }

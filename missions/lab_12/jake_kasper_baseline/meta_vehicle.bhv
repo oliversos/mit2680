@@ -4,6 +4,8 @@ initialize   DEPLOY  = false
 initialize   RETURN  = false
 initialize   SURVEY  = false
 initialize   STATION = false
+initialize   SHARE   = false
+initialize   LINK_UP = false
 
 Set MODE = ACTIVE {
   DEPLOY = true
@@ -18,6 +20,21 @@ set MODE = RETURNING {
   MODE = ACTIVE
   RETURN = true
 } SURVEYING
+
+set MODE = LINKING {
+  MODE = ACTIVE:SURVEYING
+  LINK_UP = true
+}
+
+set MODE = SHARING {
+  MODE = ACTIVE:SURVEYING
+  SHARE = true
+} 
+
+set MODE = LOITERING {
+  MODE = ACTIVE:SURVEYING
+  SURVEY = true
+}
 
 
 //----------------------------------------------
@@ -58,8 +75,9 @@ Behavior = BHV_Waypoint
 { 
   name      = waypt_survey
   pwt       = 100
-  condition = MODE==SURVEYING
-  endflag   = RETURN = true
+  condition = MODE==LOITERING
+  endflag   = SURVEY = false
+  endflag   = LINK_UP = true
   perpetual = true
 
          speed = 2   // meters per second
@@ -69,10 +87,10 @@ Behavior = BHV_Waypoint
 
 
 #ifdef VNAME VNAME1
-	points = format=lawnmower,label=jakesearch,x=-40,y=-237.5,height=325,width=240,lane_width=40,rows=ns,startx=0,starty=0
+	points = format=lawnmower,label=jakesearch,x=-30,y=-237.5,height=325,width=255,lane_width=40,rows=ns,startx=0,starty=0
   visual_hints = vertex_color=yellow, edge_color=green
 #elseifdef VNAME VNAME2
-	points = format=lawnmower,label=kaspersearch,x=262.5,y=-237.5,height=325,width=255,lane_width=20,rows=north-south,degs=0
+	points = format=lawnmower,label=kaspersearch,x=270,y=-237.5,height=325,width=255,lane_width=40,rows=north-south,startx=20,starty=0,degs=0
   visual_hints = vertex_color=yellow, edge_color=gray25
 #endif
 
@@ -103,5 +121,39 @@ Behavior = BHV_Waypoint
         radius = 2.0
      nm_radius = 8.0
         points = $(START_POS)
+}
+
+//----------------------------------------------
+Behavior = BHV_Waypoint
+{
+  name       = link_up
+  pwt        = 100
+  condition  = MODE==LINKING
+  perpetual  = true
+  endflag    = SHARE = true
+  endflag    = LINK_UP = false
+  endflag    = SEND_REPORT = true
+
+         speed = 2.0
+        radius = 2.0
+     nm_radius = 8.0
+        points = 125,-75
+}
+
+//----------------------------------------------
+Behavior = BHV_StationKeep
+{
+  name      = share_points
+  pwt       = 100
+  condition = MODE==SHARING
+
+     center_activate = true
+        inner_radius = 5
+        outer_radius = 10
+         outer_speed = 1.0
+
+       transit_speed = 1.3
+          swing_time = 7
+        visual_hints = vertex_size=0, edge_color=gray50
 }
 
