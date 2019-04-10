@@ -30,6 +30,8 @@
 #include "ACTable.h"
 #include <time.h>
 
+#include <string>
+
 using namespace std;
 
 const bool debug = true;
@@ -60,7 +62,7 @@ HazardMgr::HazardMgr()
 
   m_last_msg_sent = 0;
 
-  // TODO: NEW
+  // Added by simen
   m_max_time               = 0;
   m_mission_start_time     = 0; 
   m_penalty.missed_hazard  = 0;
@@ -95,20 +97,25 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
     bool   mstr  = msg.IsString();
 #endif
     
-    if(key == "UHZ_CONFIG_ACK") 
+    if(key == "UHZ_CONFIG_ACK"){
       handleMailSensorConfigAck(sval);
+    }
 
-    else if(key == "UHZ_OPTIONS_SUMMARY") 
+    else if(key == "UHZ_OPTIONS_SUMMARY"){
       handleMailSensorOptionsSummary(sval);
+    }
 
-    else if(key == "UHZ_DETECTION_REPORT") 
+    else if(key == "UHZ_DETECTION_REPORT"){
       handleMailDetectionReport(sval);
+    }
 
-    else if(key == "HAZARDSET_REQUEST") 
+    else if(key == "HAZARDSET_REQUEST"){
       handleMailReportRequest();
+    }
 
-    else if(key == "UHZ_MISSION_PARAMS") 
+    else if(key == "UHZ_MISSION_PARAMS"){
       handleMailMissionParams(sval);
+    }
 
     else if(key == "NODE_REPORT_LOCAL"){
       if (m_name == ""){
@@ -116,13 +123,18 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
       }
     }
 
-    else if (key == "HAZARD_REPORT"){
+    else if(key == "HAZ_REP"){
       handleHazardReport(sval);
     }
 
-
-    else 
+    // TODO: This message never arrives anywhere
+    else if(key == "UHZ_HAZARD_REPORT"){
+      handleClassificationReport(sval);
+    }
+    
+    else{
       reportRunWarning("Unhandled Mail: " + key);
+    }
   }
   
    return(true);
@@ -155,7 +167,6 @@ bool HazardMgr::Iterate()
     postHazardMessage();
   }
 
-  // TODO: NEW
   if( (MOOSTime() - m_mission_start_time) > m_max_time * 0.9){
     // Meet up to merge reports and finish mission
   }
@@ -228,7 +239,7 @@ void HazardMgr::registerVariables()
   Register("UHZ_MISSION_PARAMS", 0);
   Register("HAZARDSET_REQUEST", 0);
   Register("NODE_REPORT_LOCAL",0);
-  Register("HAZARD_REPORT",0);
+  Register("HAZ_REP",0);
 }
 
 //---------------------------------------------------------
@@ -371,7 +382,7 @@ void HazardMgr::handleMailReportRequest()
 //                       transit_path_width=25,                           
 //                       search_region = pts={-150,-75:-150,-50:40,-50:40,-75}
 
-
+// Store all parameters for the mission. Update member variables and publish search region to a waypoint update moos cariable to decide search region
 void HazardMgr::handleMailMissionParams(string str)
 {
   vector<string> svector = parseStringZ(str, ',', "{");
@@ -380,7 +391,6 @@ void HazardMgr::handleMailMissionParams(string str)
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
     
-    // TODO: NEW
     if(param == "penalty_missed_hazard")
       m_penalty.missed_hazard = stod(value);
 
@@ -403,14 +413,66 @@ void HazardMgr::handleMailMissionParams(string str)
       m_transit_path_width = stod(value);
 
     if(param == "search_region")
+      // TODO: MUST CHANGE TO UPDATE WAYPT BEHAVIOUR
       m_search_region_str = value; //pts={-150,-75:-150,-400:400,-400:400,-75}
   }
 }
 
+// TODO: NEW
+//---------------------------------------------------------
+// Procedure: handleMailMissionParams
+// Purpose:   deals with incoming classification reports from UHZ that the 
+//            vehicle has requested classification on
+//            Example str: "label=12,type=benign"
+void HazardMgr::handleClassificationReport(string str){
+  vector<string> svector = parseStringZ(str, ',', "{");
+  int lab = -1;
+  string haz_str = "";
+  bool haz = false;
+
+  unsigned int vsize = svector.size();
+  for(unsigned int i=0; i<vsize; i++) {
+    string param = biteStringX(svector[i], '=');
+    string value = svector[i];
+
+    // TODO: NEW
+    if(param == "label"){
+      lab = stod(value);
+    }
+
+    if(param == "type"){
+      haz_str = value;
+    }
+
+    if(lab != -1 && !haz_str.empty()){
+      if(haz_str == "benign"){
+        haz = false;
+      } else{
+        haz = true;
+      }
+
+      // TODO: needs to add probability somehow
+      Classification c(lab,haz);
+
+      // Add classification to member vector of classifications
+      // If it already exists, then compute new probability based on old classification vs. new one
+      vector<Classification>::iterator it;
+      for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
+        if( (*it).getLabel() == lab){
+          // TODO: calculate new prob, e.g.  getProb*getProb so low probabilities will get really low 
+          c.setProb(c.getProb() * c.getProb());
+        }
+        else{
+          // Not classified before - add to vector
+          m_classifications.push_back(c);
+        }
+      } // for all former classifications
+    } // if we have got a labal and a type
+  } // for all elements in current string
+} // func
 
 //------------------------------------------------------------
 // Procedure: buildReport()
-
 bool HazardMgr::buildReport() 
 {
   if(!debug){
@@ -461,7 +523,7 @@ void HazardMgr::handleAddName(string str)
       // I would like a string_val as well, and something that needs to be updated if the size of string_val gets too long
       m_msg += "src_node=" + m_name;
       m_msg += ",dest_node=all";
-      m_msg += ",var_name=HAZARD_REPORT";
+      m_msg += ",var_name=HAZ_REP";
       m_msg += ",string_val=";
 
       UnRegister("NODE_REPORT_LOCAL");
@@ -483,7 +545,7 @@ void HazardMgr::postHazardMessage()
   string msg;
   msg += "src_node=" + m_name;
   msg += ",dest_node=all";
-  msg += ",var_name=HAZARD_REPORT";
+  msg += ",var_name=HAZ_REP";
   msg += ",string_val=";
   */
 

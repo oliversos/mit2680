@@ -29,6 +29,9 @@
 #include "XYPolygon.h"
 
 // TODO: NEW
+#include <vector>
+#include "Classification.h"
+
 struct Penalty{
    double missed_hazard, nonopt_hazard, false_alarm, max_time_over, max_time_rate;
 }; 
@@ -105,6 +108,7 @@ class HazardMgr : public AppCastingMOOSApp
    double m_max_time;
    double m_mission_start_time;
    std::string m_search_region_str;
+   std::vector<Classification> m_classifications; // (label,classific,prob)
 
 };
 
