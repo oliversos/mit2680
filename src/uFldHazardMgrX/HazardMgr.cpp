@@ -176,10 +176,6 @@ bool HazardMgr::Iterate()
     postHazardMessage();
   }
 
-  if( (MOOSTime() - m_mission_start_time) > m_max_time * 0.9){
-    // Meet up to merge reports and finish mission
-  }
-
   AppCastingMOOSApp::PostReport();
   return(true);
 }
@@ -380,8 +376,23 @@ void HazardMgr::handleMailReportRequest()
 
   m_hazard_set.findMinXPath(20);
   //unsigned int count    = m_hazard_set.findMinXPath(20);
+
+  // original call
   string summary_report = m_hazard_set.getSpec("final_report");
-  
+
+  Notify("TESTREP0",summary_report);
+
+  // New call
+  summary_report = decideHazards();
+  Notify("TESTREP1",decideHazards());
+
+  // For debugging
+  string str = sortedClassificationsToString();
+  str += "# - Detections: " + to_string(m_hazard_set.size());
+  str += "# - Classifications: " + to_string(m_classifications.size());
+
+  Notify("TESTREP3",str);
+
   Notify("HAZARDSET_REPORT", summary_report);
 }
 
@@ -848,7 +859,78 @@ string HazardMgr::sortedClassificationsToString(){
     if(it == m_classifications.begin())
       out_msg += (*it).printClassification();
     else
-      out_msg += " - " + (*it).printClassification();    
+      out_msg += "#" + (*it).printClassification();    
   }
   return(out_msg);
+}
+
+
+// Contains logic to decide whether or not we believe a certain object is a hazard. Returns true if it thinks so
+bool HazardMgr::decisionRule(Classification c){
+  /*
+  // TODO: Update this parameter as a decision rule:
+  m_penalty contains: .double missed_hazard, .nonopt_hazard, .false_alarm, .max_time_over, .max_time_rate;
+  */
+    double p1 = c.getProb() * m_penalty.false_alarm;
+    double p2 = (1-c.getProb()) * m_penalty.missed_hazard;
+
+    // If we are more certain than not that this is a hazard, return true
+    if(p1 < p2){
+      return(true);
+    }
+    return(false);
+}
+
+// Used to get specification of a certain hazard in m_hazard_set based on a string produced from the corresponding Classification object
+string HazardMgr::createHazardString(Classification c){
+
+  // By current label, get spec from classification object
+  string label = to_string(c.getLabel());
+  int index = m_hazard_set.findHazard(label); 
+  XYHazard new_hazard = m_hazard_set.getHazard(index);
+  return(new_hazard.getSpec(""));
+}
+
+// Returns the final report that is sent out via handleMailReportRequest() by only looking at our known Classifications, chosen via decisionRule()
+string HazardMgr::decideHazards(){
+
+  sortClassifications(true);
+
+  XYHazardSet new_set;
+  new_set.setSource(m_host_community);
+  new_set.setName(m_report_name);
+  new_set.setRegion(m_search_region);
+
+  vector<Classification>::iterator it;
+  for(it = m_classifications.begin(); it != m_classifications.end(); ++it){
+    
+    // If the current object fulfills requirement for reporting it as a hazard:
+    if( decisionRule((*it)) ){
+      
+      // Use getSpec to create inputstring to string2Hazard from classification
+      string str = createHazardString((*it));
+      XYHazard new_hazard = string2Hazard(str);
+
+      // Setting type to make sure of that we are reporting this as hazard
+      new_hazard.setType("hazard");
+      string hazlabel = new_hazard.getLabel();
+      
+      // TODO: Uneccessary check?
+      if(hazlabel == "") {
+        reportRunWarning("Add hazard in decideHazards() w/out label");
+        return("");
+      }
+
+      // Add or overwrite XYHazard to new_set
+      int ix = new_set.findHazard(hazlabel);
+      if(ix == -1)
+        new_set.addHazard(new_hazard);
+      else{
+        // Overwrite if already in the set, but perhaps as a benign
+        new_set.setHazard(ix, new_hazard);
+      }
+    }
+  }
+
+  return(new_set.getSpec("final_report"));
 }
