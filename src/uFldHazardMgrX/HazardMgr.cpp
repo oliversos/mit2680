@@ -177,7 +177,6 @@ bool HazardMgr::Iterate()
 
   if ((MOOSTime() - m_last_msg_sent > 65) && m_send_report){
     postHazardMessage();
-    Notify("")
   }
 
   if (m_initiated == false){
@@ -712,7 +711,7 @@ void HazardMgr::handleHazardReport(string str)
         if (type == "l"){
           info += "label=";
           info += orig;
-          info += ",";l=28_p=0.3#l=75_p=0.7#l=19_p=0.7#l=53_p=0.7#l=91_p=0.845
+          info += ",";
         }
         if (type == "t"){
           info += "type=";
