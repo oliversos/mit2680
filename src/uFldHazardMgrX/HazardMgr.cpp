@@ -139,7 +139,7 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
     }
 
     else if(key == "RETURN"){
-      decideHazards();
+      //decideHazards();
     }
     else{
       reportRunWarning("Unhandled Mail: " + key);
@@ -439,7 +439,7 @@ void HazardMgr::handleMailMissionParams(string str)
 //            vehicle has requested classification on
 //            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
-  Notify("Stringvalue",str);
+
   vector<string> svector = parseString(str, ',');
   int lab = -1;
   string haz_str = "";
@@ -741,7 +741,7 @@ void HazardMgr::handleHazardReport(string str)
           }
         }
         Notify("BEFORE_UPDATE",p);
-        updateClassification(id,p,t,true);
+        updateSendtClassification(id,p,t,true);
       }
     }
       // All hazards has been received - stop waiting
@@ -799,8 +799,14 @@ void HazardMgr::updateClassification(int id, double prob, bool newClass, bool re
     }
   }
   else{
-    Classification newClassification(id,newClass,prob,recieved);
+    if (newClass){
+      Classification newClassification(id,newClass,prob,recieved);
+      m_classifications.push_back(newClassification);
+    }
+    else{
+      Classification newClassification(id,newClass,1.0 - prob,recieved);
     m_classifications.push_back(newClassification);
+    }
     ss << prob;
     Notify("CLASSIFICATION_ADD",ss.str());
   }
