@@ -172,7 +172,7 @@ bool HazardMgr::Iterate()
   if(m_sensor_config_set)
     postSensorInfoRequest();
 
-  if ((MOOSTime() - m_last_msg_sent > 61) && m_send_report){
+  if ((MOOSTime() - m_last_msg_sent > 70) && m_send_report){
     postHazardMessage();
   }
 
@@ -358,7 +358,7 @@ bool HazardMgr::handleMailDetectionReport(string str)
   event += ", x=" + doubleToString(new_hazard.getX(),1);
   event += ", y=" + doubleToString(new_hazard.getY(),1);
 
-  //TODO: reportEvent(event);
+  reportEvent(event);
 
   string req = "vname=" + m_host_community + ",label=" + hazlabel;
   Notify("UHZ_CLASSIFY_REQUEST", req);
@@ -379,6 +379,7 @@ void HazardMgr::handleMailReportRequest()
 
   // original call
   string summary_report = m_hazard_set.getSpec("final_report");
+  string out_str = summary_report;
 
   Notify("TESTREP0",summary_report);
 
@@ -393,7 +394,7 @@ void HazardMgr::handleMailReportRequest()
 
   Notify("TESTREP3",str);
 
-  Notify("HAZARDSET_REPORT", summary_report);
+  Notify("HAZARDSET_REPORT", out_str);
 }
 
 
@@ -588,7 +589,7 @@ void HazardMgr::postHazardMessage()
 
     if (! (m_hazard_sent.hasHazard(label)) ){
       unsent_hazards.addHazard(current);
-      sending ++;
+      sending++;
     }
   } 
 
@@ -646,7 +647,8 @@ void HazardMgr::postHazardMessage()
       m_hazard_sent.addHazard(current_unsent);
       sending --;
     }
-    sending_msg += haz_msg;
+    sending_msg += haz_msg; 
+    // "\"" + haz_msg + "\"";
   }
 
   // TODO: remove false
