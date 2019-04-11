@@ -6,6 +6,7 @@ ProcessConfig = pHostInfo
   AppTick 	= 1
   CommsTick 	= 1
 
-  DEFAULT_HOSTIP = 18.21.129.148
+  DEFAULT_HOSTIP = 18.21.171.113
+
 }
 

@@ -74,9 +74,11 @@ HazardMgr::HazardMgr()
   m_penalty.max_time_over  = 0;
   m_penalty.max_time_rate  = 0;
   m_pclass = 1;
+  m_initiated = false;
+
+  m_classification_msg = "";
 
   m_search_region_str = "";
-
   m_pclass = 1;
 
 }
@@ -129,7 +131,8 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
       }
     }
 
-    else if (key == "HAZ_REP"){
+    else if (key == "HAZARD_REPORT"){ 
+      Notify("GOT_HAZREP",sval);
       handleHazardReport(sval);
     }
 
@@ -172,8 +175,19 @@ bool HazardMgr::Iterate()
   if(m_sensor_config_set)
     postSensorInfoRequest();
 
-  if ((MOOSTime() - m_last_msg_sent > 70) && m_send_report){
+
+  if ((MOOSTime() - m_last_msg_sent > 65) && m_send_report){
     postHazardMessage();
+  }
+
+  if (m_initiated == false){
+    string sending_msg; //This is the total message to be sent to the )collaborator
+    sending_msg += "src_node=" + m_name;
+    sending_msg += ",dest_node=all";
+    sending_msg += ",var_name=HAZARD_REPORT";
+    sending_msg += ",string_val=heisann";
+    Notify("NODE_MESSAGE_LOCAL",sending_msg);
+    m_initiated = true;
   }
 
   AppCastingMOOSApp::PostReport();
@@ -244,7 +258,7 @@ void HazardMgr::registerVariables()
   Register("UHZ_MISSION_PARAMS", 0);
   Register("HAZARDSET_REQUEST", 0);
   Register("NODE_REPORT_LOCAL",0);
-  Register("HAZ_REP",0);
+  Register("HAZARD_REPORT",0);
   Register("UHZ_HAZARD_REPORT",0);
   Register("RETURN",0);
 }
@@ -462,7 +476,6 @@ void HazardMgr::handleClassificationReport(string str){
     string param = biteStringX(svector[i], '=');
     string value = svector[i];
 
-    // TODO: NEW
     if(param == "label"){
       lab = stoi(value);
     }
@@ -478,11 +491,15 @@ void HazardMgr::handleClassificationReport(string str){
     } else{
       haz = true;
     }
-
-    // Create and object to compare with our current list as if it was the very first observation. We are pclass certain of haz being what it is
-    updateClassification(lab,m_pclass,haz,false);
-    // Add classification to member vector of classifications
-    // If it already exists, then compute new probability based on old classification vs. new one
+    m_classification_msg += "l=";
+    m_classification_msg += to_string(lab);
+    m_classification_msg += "_p=";
+    if (haz)
+      m_classification_msg += "0.7";
+    else
+      m_classification_msg += "0.3";
+    m_classification_msg += "#";
+    updateNewClassification(lab,m_pclass,haz);
   } // if we have got a labal and a type
 } // for all elements in current string
   // func
@@ -557,26 +574,16 @@ void HazardMgr::postHazardMessage()
   string sending_msg; //This is the total message to be sent to the )collaborator
   sending_msg += "src_node=" + m_name;
   sending_msg += ",dest_node=all";
-  sending_msg += ",var_name=HAZ_REP";
+  sending_msg += ",var_name=HAZARD_REPORT";
   sending_msg += ",string_val=";
 
-  string added_msg; // message to be added upon the existing one
+  string haz_msg; // Message to be sent as haz_reg
 
-  string haz_msg;// Message to be sent as haz_rep
 
-  for (unsigned int i = 0; i < m_classifications.size(); i++){
-    if (!m_classifications[i].getShared()){
-      added_msg = m_classifications[i].printClassification();
-      if (!(added_msg.length() + haz_msg.length() + 1 > 100)){
-        haz_msg += added_msg;
-        haz_msg += "#";
-        m_classifications[i].setShared(true);
-      }
-      else{
-        return;
-      }
-    }
-  }
+  string added_msg = m_classification_msg;
+  m_classification_msg = "";
+  haz_msg += added_msg;
+
 
   XYHazardSet unsent_hazards; // all hazards that has not been sent yet
   int sending = 0;
@@ -584,10 +591,11 @@ void HazardMgr::postHazardMessage()
   // Get each hazard, and check to see if it is already sent
   // If not, then add to the set of unsent hazards
   for (unsigned int i = 0; i < m_hazard_set.size() ; i++){
+
     XYHazard current = m_hazard_set.getHazard(i);
     string label = current.getLabel();
 
-    if (! (m_hazard_sent.hasHazard(label)) ){
+    if (!(m_hazard_sent.hasHazard(label)) ){
       unsent_hazards.addHazard(current);
       sending++;
     }
@@ -638,7 +646,7 @@ void HazardMgr::postHazardMessage()
       // TODO remove false
       // if message length is longer than 100 elements, tell by M 
       // here, test must be changed for length of string_val
-      if (haz_msg.length() + info.length() + 2 > 100) {
+      if (haz_msg.length() + info.length() + 3 > 100) {
         break;
       }
 
@@ -653,8 +661,10 @@ void HazardMgr::postHazardMessage()
 
   // TODO: remove false
   // TODO: this F has to be removed later in a string reading function, if m_msg is kept as member OR could be solved by Notify("NODE_MESSAGE_LOCAL",m_msg + "M");
-  Notify("HAZ_MSSG",haz_msg);
-  Notify("NODE_MESSAGE_LOCAL",sending_msg);
+  if (haz_msg != ""){
+    Notify("HAZ_MSSG",haz_msg);
+    Notify("NODE_MESSAGE_LOCAL",sending_msg);
+  }
   m_last_msg_sent = MOOSTime();
 
   if(debug)
@@ -669,92 +679,83 @@ void HazardMgr::postHazardMessage()
 // @return    no returns
 void HazardMgr::handleHazardReport(string str)
 {
-  char c = str.back();
-  if (c == '#'){
-    str.pop_back();
-  }
   Notify("ALL_HAZ",str);
   vector<string> received_hazards = parseString(str,"#");
+  Notify("SIZE",received_hazards.size());
 
   for (unsigned int i = 0 ; i < received_hazards.size() ; i++){
     string current = received_hazards[i];
+    Notify("MZZG",current);
+
 
     // TODO: maybe we have to control for "" here as well, since # might be put on the end of a message (I can see that such a situation should never occur in postMessage, but seems like god programmeringsskikk)
 
-    if (current != "M" && current != "F"){
-      string info;
-      vector <string> haz_info = parseString(current,'_');
+    string info;
+    vector <string> haz_info = parseString(current,'_');
 
-      int length = haz_info.size();
-      if (length == 4){
-        for(unsigned int i = 0; i < length; i++){ 
+    int length = haz_info.size();
+    Notify("LENGTH4",length);
+    if (length == 4){
+      for(unsigned int i = 0; i < length; i++){ 
 
-          string orig = haz_info[i];
-          string type = biteStringX(orig,'=');
+        string orig = haz_info[i];
+        string type = biteStringX(orig,'=');
 
-          if (type == "x"){
-            info += "x=";
-            info += orig;
-            info += ",";
+        if (type == "x"){
+          info += "x=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "y"){
+          info += "y=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "l"){
+          info += "label=";
+          info += orig;
+          info += ",";
+        }
+        if (type == "t"){
+          info += "type=";
+          if (orig == "h"){
+            orig = "hazard";
           }
-          if (type == "y"){
-            info += "y=";
-            info += orig;
-            info += ",";
+          else{
+            orig = "benign";
           }
-          if (type == "l"){
-            info += "label=";
-            info += orig;
-            info += ",";
-          }
-          if (type == "t"){
-            info += "type=";
-            if (orig == "h"){
-              orig = "hazard";
-            }
-            else{
-              orig = "benign";
-            }
-            info += orig;
-          }
+          info += orig;
+        }
 
-          XYHazard new_hazard = string2Hazard(info);
-          string label = new_hazard.getLabel();
 
-          // If the hazard is not in the LOCAL set of hazards, then we can add it to 
-          if (!m_hazard_set.hasHazard(label)){
-            m_hazard_set.addHazard(new_hazard);
-            m_hazard_sent.addHazard(new_hazard);
-          }
+        XYHazard new_hazard = string2Hazard(info);
+        string label = new_hazard.getLabel();
+        Notify("ADDING_HAZARD",label);
+
+        // If the hazard is not in the LOCAL set of hazards, then we can add it to 
+        if (!m_hazard_set.hasHazard(label)){
+          m_hazard_set.addHazard(new_hazard);
+          m_hazard_sent.addHazard(new_hazard);
         }
       }
+    }
 
-      if (length == 3){
-        int id = -1;
-        double p;
-        bool t;
-        for (unsigned int i = 0 ; i < length ; i++){
-          string orig = haz_info[i];
-          string type = biteStringX(orig,'=');
-          if (type == "l"){
-            id = stoi(orig);
-          }
-          if (type == "p"){
-            p = stod(orig);
-            Notify("P_UPDATE",p);
-          }
-          if (type == "c"){
-            if (orig == "h"){
-              t = true;
-            } 
-            else{
-              t = false;
-            }
-          }
+    if (length == 2){
+      Notify("LENGTH2",length);
+      int id = -1;
+      double p;
+      bool t;
+      for (unsigned int i = 0 ; i < length ; i++){
+        string orig = haz_info[i];
+        string type = biteStringX(orig,'=');
+        if (type == "l"){
+          id = stoi(orig);
         }
-        Notify("BEFORE_UPDATE",p);
-        updateClassification(id,p,t,true);
+        if (type == "p"){
+          p = stod(orig);
+        }
       }
+      updateIncomingClassification(id,p);
     }
       // All hazards has been received - stop waiting
       // TODO: where is such a variable handled?
@@ -794,33 +795,52 @@ bool HazardMgr::classificationExist(int id)
   return false;
 }
 
-void HazardMgr::updateClassification(int id, double prob, bool newClass, bool recieved)
+void HazardMgr::updateNewClassification(int id, double prob, bool newClass)
 {
-  stringstream ss;
-  ss << std::setprecision(3);
-  ss << "id:" << id << ", prob:"; 
+
   if (classificationExist(id)){
     for (unsigned int i = 0; i < m_classifications.size(); i++){
       if (m_classifications[i].getLabel() == id){
+        Notify("NEW_PROB",prob);
+        Notify("NEW_CLASS",newClass);        
         m_classifications[i].calculateProb(newClass,prob);
-        m_classifications[i].setShared(recieved);
-        ss << std::setprecision(3) << m_classifications[i].getProb();
-        Notify("CLASSIFICATION_UPDATE",ss.str());
         break;
       }
     }
   }
   else{
     if (newClass){
-      Classification newClassification(id,newClass,prob,recieved);
+      Classification newClassification(id,prob,false);
+      newClassification.setLastReport(newClass);
       m_classifications.push_back(newClassification);
     }
     else{
-      Classification newClassification(id,newClass,1.0 - prob,recieved);
-    m_classifications.push_back(newClassification);
+      double a = 1.0 - prob;
+      Classification newClassification(id,a,false);
+      newClassification.setLastReport(newClass);
+      m_classifications.push_back(newClassification);
     }
-    ss << prob;
-    Notify("CLASSIFICATION_ADD",ss.str());
+  }
+}
+
+void HazardMgr::updateIncomingClassification(int id, double prob)
+{
+  Notify("UPDATE_INCOMING",m_classifications.size());
+  if (classificationExist(id)){
+    Notify("CLASSIFICATION_EXIST","true");
+    for (unsigned int i = 0; i < m_classifications.size(); i++){
+      if (m_classifications[i].getLabel() == id){
+        Notify("BEFORE_INCOMING",m_classifications[i].getProb());
+        m_classifications[i].calculateProb(true,prob);
+        Notify("AFTER_INCOMING",m_classifications[i].getProb());
+        break;
+      }
+    }
+  }
+  else{
+    Classification newClassification(id,prob,true);
+    m_classifications.push_back(newClassification);
+    Notify("GOT_NEW_CLASSIFICATION",id);
   }
 }
 
@@ -932,6 +952,5 @@ string HazardMgr::decideHazards(){
       }
     }
   }
-
   return(new_set.getSpec("final_report"));
 }

@@ -12,13 +12,9 @@ string Classification::printClassification(){
 	out += to_string(m_label);
 	out += "_p=";
 	stringstream ss;
-	ss << std::setprecision(3) << m_prob;
-	out += ss.str();	
-	out += "_t=";
-	if (m_hazard)
-		out += "h";
-	else
-		out += "b";
+	ss << std::setprecision(3);
+	ss << m_prob;
+	out += ss.str();
   return out;
 }
 
