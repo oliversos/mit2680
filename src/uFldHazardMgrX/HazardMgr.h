@@ -75,7 +75,8 @@ class HazardMgr : public AppCastingMOOSApp
 
    void setClassificationStatus(int,bool);
    bool classificationExist(int);
-   void updateClassification(int,double,bool,bool);
+   void updateNewClassification(int,double,bool);
+   void updateIncomingClassification(int,double);
 
    // sorts m_classifications based on probabilities, from smallest to largest
    void sortClassifications(bool);
@@ -113,6 +114,7 @@ class HazardMgr : public AppCastingMOOSApp
    XYPolygon   m_search_region;
    
    double      m_transit_path_width;
+   bool m_initiated;
 
    // self made
    double m_last_msg_sent;       // time since last message
@@ -126,7 +128,9 @@ class HazardMgr : public AppCastingMOOSApp
    double m_max_time;
    double m_mission_start_time;
    std::string m_search_region_str;
-   std::vector<Classification> m_classifications; 
+   std::vector<Classification> m_classifications;
+
+   string m_classification_msg; 
 
    double m_pclass;
 };

@@ -10,8 +10,7 @@ using namespace std;
 class Classification{
    public:
       Classification(){};
-      Classification(int l, bool h, double p, bool s){m_label=l;m_hazard=h;m_prob=p; m_shared=s;};
-      Classification(int l, bool h){m_label=l; m_hazard=h; m_prob=0.99;m_shared = false;};
+      Classification(int l, double p, bool s){m_label=l;m_prob=p; m_shared=s;};
       ~Classification(){};
 
       // Overloaded to use std::sort on vector as sort(v.begin(), v.begin(), v.end())
@@ -20,6 +19,7 @@ class Classification{
       double getProb()  {return m_prob; };
       string printClassification();
 
+      void setLastReport(bool rep) {m_last_report = rep;};
       void setLabel(int l)    {m_label = l;};
       void setProb(double p)  {m_prob  = p;};
       void calculateProb(bool newClass, double p);
@@ -29,8 +29,8 @@ class Classification{
 
    protected:
       int m_label;
-      bool m_hazard;   // or string classification;
       double m_prob;   // storing prob for m_label being a hazard
+      bool m_last_report;
       bool m_shared;   // stores if classification is sent to collaborator
 };
 #endif 

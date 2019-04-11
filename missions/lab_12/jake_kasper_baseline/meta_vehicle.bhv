@@ -3,7 +3,9 @@
 initialize   DEPLOY  = false
 initialize   RETURN  = false
 initialize   SURVEY_2  = false
+initialize   SURVEY_1 = false
 initialize   STATION = false
+initialize   START = true
 
 Set MODE = ACTIVE {
   DEPLOY = true
@@ -21,8 +23,19 @@ set MODE = RETURNING {
 
 set MODE = SURVEYING_1 {
   MODE = ACTIVE:SURVEYING
-  SURVEY_2 != true
-} SURVEYING_2
+  SURVEY_1 = true
+} 
+
+set MODE = SURVEYING_2 {
+  MODE = ACTIVE:SURVEYING
+  SURVEY_2 = true
+} 
+
+set MODE = STARTING {
+  MODE = ACTIVE:SURVEYING
+  START = true	
+}
+
 
 
 //----------------------------------------------
@@ -57,6 +70,26 @@ Behavior = BHV_StationKeep
         visual_hints = vertex_size=0, edge_color=gray50
 }
 
+//------------------------------------------------
+Behavior = BHV_Waypoint
+{
+  name = to_start
+  pwt  = 100
+  condition = MODE == STARTING
+
+  #ifdef VNAME VNAME1
+  speed = 1.7
+
+  #elseifdef VNAME VNAME2
+  speed = 2.0
+  #endif
+
+  points = -150,-75
+  endflag = SURVEY_1 = true
+  endflag = START = false
+  perpetual = false
+}
+
 
 //----------------------------------------------
 Behavior = BHV_Waypoint
@@ -67,17 +100,22 @@ Behavior = BHV_Waypoint
 
   perpetual = true
 
-         speed = 2   // meters per second
+           // meters per second
         radius = 5.0
    slip_radius = 15.0
           lead = 15
+	 speed = 2
 
-	points = format=lawnmower,label=jakesearch,x=120,y=-237.5,height=325,width=510,lane_width=30,rows=east-west,startx=0,starty=0
+#ifdef VNAME VNAME1
+	points = format=lawnmower,label=jakesearch,x=125,y=-245,height=325,width=540,lane_width=30,rows=east-west,startx=0,starty=0
   visual_hints = vertex_color=yellow, edge_color=green
 
+#elseifdef VNAME VNAME2
+	points = format=lawnmower,label=jakesearch,x=125,y=-230,height=325,width=540,lane_width=30,rows=east-west,startx=0,starty=0
+  visual_hints = vertex_color=yellow, edge_color=green
+#endif
        endflag = SURVEY_2 = true
-   
-       updates = UPDATE_REGION_1
+       endflag = SURVEY_1 = false
 
         repeat = 0
   visual_hints = nextpt_color=red, nextpt_lcolor=green
@@ -93,26 +131,23 @@ Behavior = BHV_Waypoint
 
   perpetual = true
 
-         speed = 2   // meters per second
         radius = 5.0
    slip_radius = 15.0
           lead = 15
+	 speed = 2
 
-	
 
 #ifdef VNAME VNAME1
-	points = format=lawnmower,label=jakesearch,x=120,y=-247.5,height=325,width=510,lane_width=30,rows=east-west,startx=0,starty=0
-  visual_hints = vertex_color=yellow, edge_color=green
+points=format=lawnmower,label=kaspersearch,x=125,y=-235,height=295,width=540,lane_width=30,rows=east-west,startx=0,starty=0,degs=0
+  visual_hints = vertex_color=yellow, edge_color=gray25
+
 #elseifdef VNAME VNAME2
-	points = format=lawnmower,label=kaspersearch,x=120,y=-247.5,height=325,width=510,lane_width=30,rows=east-west,startx=0,starty=0,degs=0
+points=format=lawnmower,label=kaspersearch,x=125,y=-240,height=295,width=540,lane_width=30,rows=east-west,startx=0,starty=0,degs=0
   visual_hints = vertex_color=yellow, edge_color=gray25
 #endif
 
-
        endflag = SURVEY_2 = false
        endflag = RETURN = true
-   
-       updates = UPDATE_REGION_2
 
         repeat = 0
   visual_hints = nextpt_color=red, nextpt_lcolor=green
@@ -131,43 +166,10 @@ Behavior = BHV_Waypoint
   endflag    = HAZARDSET_REQUEST = true
   endflag    = NODE_MESSAGE_LOCAL = src_node=$(VNAME),dest_node=all,var_name=SURVEY,string_val=COMPLETE
 
-         speed = 2.0
+         speed = 5.0
         radius = 2.0
      nm_radius = 8.0
         points = $(START_POS)
 }
 
-//----------------------------------------------
-Behavior = BHV_Waypoint
-{
-  name       = link_up
-  pwt        = 100
-  condition  = MODE==LINKING
-  perpetual  = true
-  endflag    = SHARE = true
-  endflag    = LINK_UP = false
-  endflag    = SEND_REPORT = true
-
-         speed = 2.0
-        radius = 2.0
-     nm_radius = 8.0
-        points = 125,-75
-}
-
-//----------------------------------------------
-Behavior = BHV_StationKeep
-{
-  name      = share_points
-  pwt       = 100
-  condition = MODE==SHARING
-
-     center_activate = true
-        inner_radius = 5
-        outer_radius = 10
-         outer_speed = 1.0
-
-       transit_speed = 1.3
-          swing_time = 7
-        visual_hints = vertex_size=0, edge_color=gray50
-}
 
