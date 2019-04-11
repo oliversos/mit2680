@@ -752,7 +752,7 @@ void HazardMgr::handleHazardReport(string str)
           }
         }
         Notify("BEFORE_UPDATE",p);
-        updateSendtClassification(id,p,t,true);
+        updateClassification(id,p,t,true);
       }
     }
       // All hazards has been received - stop waiting
