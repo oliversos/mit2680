@@ -585,7 +585,6 @@ void HazardMgr::postHazardMessage()
 
 
   XYHazardSet unsent_hazards; // all hazards that has not been sent yet
-
   int sending = 0;
 
   // Get each hazard, and check to see if it is already sent
