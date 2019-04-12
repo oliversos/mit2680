@@ -1,25 +1,11 @@
 /*****************************************************************/
-/*    NAME: Oliver Os                                            */
+/*    NAME: Oliver Os and Simen Sem Oevereng                     */
 /*    ORGN: Dept of Mechanical Eng / CSAIL, MIT Cambridge MA     */
 /*    FILE: HazardMgr.cpp                                        */
-/*    DATE: Apr 3rd 2019                                         */
-/*    EDIT: Apr 5rd 2019 (By Simen Sem Oevereng, MIT)            */
-/*                                                               */
-/* This file is part of MOOS-IvP                                 */
-/*                                                               */
-/* MOOS-IvP is free software: you can redistribute it and/or     */
-/* modify it under the terms of the GNU General Public License   */
-/* as published by the Free Software Foundation, either version  */
-/* 3 of the License, or (at your option) any later version.      */
-/*                                                               */
-/* MOOS-IvP is distributed in the hope that it will be useful,   */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty   */
-/* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See  */
-/* the GNU General Public License for more details.              */
-/*                                                               */
-/* You should have received a copy of the GNU General Public     */
-/* License along with MOOS-IvP.  If not, see                     */
-/* <http://www.gnu.org/licenses/>.                               */
+/*    DATE: Apr 12  2019                                         */
+/*    This app expands the functionality of the MOOS-IvP app     */
+/*    uFldHazardMgr by adjusting it according to specification   */
+/*    in lab 12 and 13 of the 2.680 class at MIT, Spring 2019    */
 /*****************************************************************/
 
 #include <iterator>
@@ -61,11 +47,11 @@ HazardMgr::HazardMgr()
 
   m_summary_reports = 0;
 
+  // Added
   m_name = "";
-
+  m_msg = ""; // Added when writing documentation as it wast initiated. Might cause problems later if Oliver has assumed that it was uninitiated before?
   m_last_msg_sent = 0;
 
-  // Added by simen
   m_max_time               = 0;
   m_mission_start_time     = 0; 
   m_penalty.missed_hazard  = 0;
@@ -85,7 +71,6 @@ HazardMgr::HazardMgr()
 
 //---------------------------------------------------------
 // Procedure: OnNewMail
-
 bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
 {
   AppCastingMOOSApp::OnNewMail(NewMail);
@@ -95,15 +80,6 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
     CMOOSMsg &msg = *p;
     string key   = msg.GetKey();
     string sval  = msg.GetString(); 
-
-#if 0 // Keep these around just for template
-    string comm  = msg.GetCommunity();
-    double dval  = msg.GetDouble();
-    string msrc  = msg.GetSource();
-    double mtime = msg.GetTime();
-    bool   mdbl  = msg.IsDouble();
-    bool   mstr  = msg.IsString();
-#endif
     
     if(key == "UHZ_CONFIG_ACK"){
       handleMailSensorConfigAck(sval);
@@ -136,7 +112,6 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
       handleHazardReport(sval);
     }
 
-    // TODO: This message never arrives anywhere
     else if(key == "UHZ_HAZARD_REPORT"){
       handleClassificationReport(sval);
     }
@@ -154,7 +129,6 @@ bool HazardMgr::OnNewMail(MOOSMSG_LIST &NewMail)
 
 //---------------------------------------------------------
 // Procedure: OnConnectToServer
-
 bool HazardMgr::OnConnectToServer()
 {
    registerVariables();
@@ -164,7 +138,6 @@ bool HazardMgr::OnConnectToServer()
 //---------------------------------------------------------
 // Procedure: Iterate()
 //            happens AppTick times per second
-
 bool HazardMgr::Iterate()
 {
   AppCastingMOOSApp::Iterate();
@@ -181,7 +154,8 @@ bool HazardMgr::Iterate()
   }
 
   if (m_initiated == false){
-    string sending_msg; //This is the total message to be sent to the )collaborator
+    // This is the total message to be sent to the )collaborator. This is done to initialize the HAZARD_REPORT variable as a string, since there was problems with it never being published as a string since it was set to be a double somewhere else.
+    string sending_msg;
     sending_msg += "src_node=" + m_name;
     sending_msg += ",dest_node=all";
     sending_msg += ",var_name=HAZARD_REPORT";
@@ -197,7 +171,6 @@ bool HazardMgr::Iterate()
 //---------------------------------------------------------
 // Procedure: OnStartUp()
 //            happens before connection is open
-
 bool HazardMgr::OnStartUp()
 {
   AppCastingMOOSApp::OnStartUp();
@@ -231,7 +204,7 @@ bool HazardMgr::OnStartUp()
     else if(param == "region") {
       XYPolygon poly = string2Poly(value);
       if(poly.is_convex())
-  m_search_region = poly;
+        m_search_region = poly;
       handled = true;
     }
 
@@ -248,7 +221,6 @@ bool HazardMgr::OnStartUp()
 
 //---------------------------------------------------------
 // Procedure: registerVariables
-
 void HazardMgr::registerVariables()
 {
   AppCastingMOOSApp::RegisterVariables();
@@ -265,7 +237,6 @@ void HazardMgr::registerVariables()
 
 //---------------------------------------------------------
 // Procedure: postSensorConfigRequest
-
 void HazardMgr::postSensorConfigRequest()
 {
   string request = "vname=" + m_host_community;
@@ -280,7 +251,6 @@ void HazardMgr::postSensorConfigRequest()
 
 //---------------------------------------------------------
 // Procedure: postSensorInfoRequest
-
 void HazardMgr::postSensorInfoRequest()
 {
   string request = "vname=" + m_host_community;
@@ -291,7 +261,7 @@ void HazardMgr::postSensorInfoRequest()
 
 //---------------------------------------------------------
 // Procedure: handleMailSensorConfigAck
-
+// Edits:     m_pclass
 bool HazardMgr::handleMailSensorConfigAck(string str)
 {
   // Expected ack parameters:
@@ -332,7 +302,6 @@ bool HazardMgr::handleMailSensorConfigAck(string str)
   if(!valid_msg)
     reportRunWarning("Unhandled Sensor Config Ack:" + original_msg);
 
-  
   if(valid_msg) {
     m_sensor_config_set = true;
     m_sensor_config_acks++;
@@ -347,7 +316,6 @@ bool HazardMgr::handleMailSensorConfigAck(string str)
 // Procedure: handleMailDetectionReport
 //      Note: The detection report should look something like:
 //            UHZ_DETECTION_REPORT = vname=betty,x=51,y=11.3,label=12 
-
 bool HazardMgr::handleMailDetectionReport(string str)
 {
   m_detection_reports++;
@@ -383,7 +351,6 @@ bool HazardMgr::handleMailDetectionReport(string str)
 
 //---------------------------------------------------------
 // Procedure: handleMailReportRequest
-
 void HazardMgr::handleMailReportRequest()
 {
   m_summary_reports++;
@@ -393,7 +360,6 @@ void HazardMgr::handleMailReportRequest()
 
   // original call
   string summary_report = m_hazard_set.getSpec("final_report");
-  string out_str = summary_report;
 
   Notify("TESTREP0",summary_report);
 
@@ -408,21 +374,23 @@ void HazardMgr::handleMailReportRequest()
 
   Notify("TESTREP3",str);
 
-  Notify("HAZARDSET_REPORT", out_str);
+  Notify("HAZARDSET_REPORT", summary_report);
 }
 
 
 //---------------------------------------------------------
 // Procedure: handleMailMissionParams
-//   Example: UHZ_MISSION_PARAMS = penalty_missed_hazard=100,               
+// Purpose:   Store all parameters for the mission. Update member variables
+//            and publish search region to a waypoint update MOOS variable to 
+//            decide search region
+//   Example: UHZ_MISSION_PARAMS = 
+//                       penalty_missed_hazard=100,               
 //                       penalty_nonopt_hazard=55,                
 //                       penalty_false_alarm=35,                  
 //                       penalty_max_time_over=200,               
 //                       penalty_max_time_rate=0.45,              
 //                       transit_path_width=25,                           
 //                       search_region = pts={-150,-75:-150,-50:40,-50:40,-75}
-
-// Store all parameters for the mission. Update member variables and publish search region to a waypoint update moos cariable to decide search region
 void HazardMgr::handleMailMissionParams(string str)
 {
   vector<string> svector = parseStringZ(str, ',', "{");
@@ -453,16 +421,15 @@ void HazardMgr::handleMailMissionParams(string str)
       m_transit_path_width = stod(value);
 
     if(param == "search_region")
-      // TODO: MUST CHANGE TO UPDATE WAYPT BEHAVIOUR
-      m_search_region_str = value; //pts={-150,-75:-150,-400:400,-400:400,-75}
+      m_search_region_str = value;
   }
 }
 
-// TODO: NEW
 //---------------------------------------------------------
-// Procedure: handleMailMissionParams
-// Purpose:   deals with incoming classification reports from UHZ that the 
-//            vehicle has requested classification on
+// Procedure: handleClassificationReport
+// Purpose:   Deals with incoming classification reports from the MOOS 
+//            variable UHZ_HAZARD_REPORT, sent from another app after the 
+//            vehicle has requested classification
 //            Example str: "label=12,type=benign"
 void HazardMgr::handleClassificationReport(string str){
 
@@ -505,13 +472,11 @@ void HazardMgr::handleClassificationReport(string str){
   // func
 
 
-
-
-
 //------------------------------------------------------------
 // Procedure: buildReport()
 bool HazardMgr::buildReport() 
 {
+  // TODO: 
   if(!debug){
     m_msgs << "Config Requested:"                                  << endl;
     m_msgs << "    swath_width_desired: " << m_swath_width_desired << endl;
@@ -775,6 +740,13 @@ Classification HazardMgr::findClassification(int id)
   return c;
 }*/
 
+//---------------------------------------------------------
+// Procedure: setClassificationStatus
+// PURPOSE:   Sets status on a Classification object regarding whether it has 
+//            been shared to the other vehicle or not
+// @param     id: label number - status: true if it has been sent
+// @edits     edits Classification objects in m_classification vector
+// @return    no returns
 void HazardMgr::setClassificationStatus(int id,bool status)
 {
   for (unsigned int i = 0; i < m_classifications.size(); i++){
@@ -784,7 +756,13 @@ void HazardMgr::setClassificationStatus(int id,bool status)
   }
 }
 
-
+//---------------------------------------------------------
+// Procedure: classificationExist
+// PURPOSE:   Checks if a Classification object exists in the member vector of
+//            classification objects, m_classifications
+// @param     id: label number
+// @edits     no edits
+// @return    true if Classification object with label id exists
 bool HazardMgr::classificationExist(int id)
 {
   for (unsigned int i = 0; i < m_classifications.size(); i++){
@@ -795,6 +773,14 @@ bool HazardMgr::classificationExist(int id)
   return false;
 }
 
+//---------------------------------------------------------
+// Procedure: updateNewClassification
+// PURPOSE:   Updates probability for a Classification object given a new 
+//            classification report the THIS vehicle has requested
+// @param     id: label number, prob: probability of id being hazard, 
+//            newClass: 
+// @edits     Classification objects in m_classification vector
+// @return    no returns
 void HazardMgr::updateNewClassification(int id, double prob, bool newClass)
 {
 
@@ -823,6 +809,15 @@ void HazardMgr::updateNewClassification(int id, double prob, bool newClass)
   }
 }
 
+
+//---------------------------------------------------------
+// Procedure: updateIncomingClassification
+// PURPOSE:   Updates probability for a Classification object given a new 
+//            classification report FROM THE OTHER vehicle. Adjusts probability
+//            if object already has a classificaion; adds if not
+// @param     id: label number, prob: probability of id being hazard
+// @edits     Classification objects in m_classification vector
+// @return    no returns
 void HazardMgr::updateIncomingClassification(int id, double prob)
 {
   Notify("UPDATE_INCOMING",m_classifications.size());
@@ -865,11 +860,23 @@ bool HazardMgr::isUnsentClassification(int id)
 
 
 
-// sorts m_classifications based on probabilities, order decided from bool
+//---------------------------------------------------------
+// Procedure: sortClassifications
+// PURPOSE:   Sorts m_classifications based on Classification objects' prob.
+// @param     dir: direction of sort. true means from smallest to largest
+// @edits     Order of Classification objects in m_classifications
+// @return    no returns
 void HazardMgr::sortClassifications(bool dir = true){
+  // TODO: case where dir = false, > must be overloaded, and ::greater must be sent to std::sort. We don't case about that now.
   std::sort(m_classifications.begin(),m_classifications.end());
 }
 
+//---------------------------------------------------------
+// Procedure: sortedClassificationsToString
+// PURPOSE:   Creates string of classifications and their probabilites.
+// @param     No inputs
+// @edits     Sorts m_classifications.
+// @return    A string of all classifications and their P(Hazard)
 string HazardMgr::sortedClassificationsToString(){
   sortClassifications(true);
 
@@ -885,8 +892,12 @@ string HazardMgr::sortedClassificationsToString(){
   return(out_msg);
 }
 
-
-// Contains logic to decide whether or not we believe a certain object is a hazard. Returns true if it thinks so
+//---------------------------------------------------------
+// Procedure: decisionRule
+// PURPOSE:   Decides if we want to report an object as Hazard or not
+// @param     c: A Classification object
+// @edits     No edits
+// @return    True if we want to report c as hazard, false otherwise.
 bool HazardMgr::decisionRule(Classification c){
   /*
   // TODO: Update this parameter as a decision rule:
@@ -902,7 +913,13 @@ bool HazardMgr::decisionRule(Classification c){
     return(false);
 }
 
-// Used to get specification of a certain hazard in m_hazard_set based on a string produced from the corresponding Classification object
+//---------------------------------------------------------
+// Procedure: createHazardString
+// PURPOSE:   Used to get specification of object in m_hazard_set based on a 
+//            string produced from the corresponding Classification object
+// @param     c: A Classification object
+// @edits     No edits
+// @return    String with XYHazard specifications
 string HazardMgr::createHazardString(Classification c){
 
   // By current label, get spec from classification object
@@ -912,7 +929,14 @@ string HazardMgr::createHazardString(Classification c){
   return(new_hazard.getSpec(""));
 }
 
-// Returns the final report that is sent out via handleMailReportRequest() by only looking at our known Classifications, chosen via decisionRule()
+//---------------------------------------------------------
+// Procedure: decideHazards
+// PURPOSE:   Returns the final report that is sent out via 
+//            handleMailReportRequest() by only looking at our known 
+//            Classifications, chosen via decisionRule()
+// @param     No inputs
+// @edits     No edits
+// @return    String with HAZARDSET_REPORT for shoreside / uFldHazardMetric
 string HazardMgr::decideHazards(){
 
   sortClassifications(true);

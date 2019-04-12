@@ -1,24 +1,11 @@
 /*****************************************************************/
-/*    NAME: Oliver Os                                    */
+/*    NAME: Oliver Os and Simen Sem Oevereng                     */
 /*    ORGN: Dept of Mechanical Eng / CSAIL, MIT Cambridge MA     */
 /*    FILE: HazardMgr.h                                          */
-/*    DATE: Apr 10 2019                                       */
-/*                                                               */
-/* This file is part of MOOS-IvP                                 */
-/*                                                               */
-/* MOOS-IvP is free software: you can redistribute it and/or     */
-/* modify it under the terms of the GNU General Public License   */
-/* as published by the Free Software Foundation, either version  */
-/* 3 of the License, or (at your option) any later version.      */
-/*                                                               */
-/* MOOS-IvP is distributed in the hope that it will be useful,   */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty   */
-/* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See  */
-/* the GNU General Public License for more details.              */
-/*                                                               */
-/* You should have received a copy of the GNU General Public     */
-/* License along with MOOS-IvP.  If not, see                     */
-/* <http://www.gnu.org/licenses/>.                               */
+/*    DATE: Apr 12 2019                                          */
+/*    This app expands the functionality of the MOOS-IvP app     */
+/*    uFldHazardMgr by adjusting it according to specification   */
+/*    in lab 12 and 13 of the 2.680 class at MIT, Spring 2019    */
 /*****************************************************************/
 
 #ifndef UFLD_HAZARD_MGR_HEADER
@@ -28,10 +15,10 @@
 #include "XYPolygon.h"
 #include "NodeMessage.h"
 
-// TODO: NEW
 #include <vector>
 #include "Classification.h"
 
+// Self declared struct for storing penalty values
 struct Penalty{
    double missed_hazard, nonopt_hazard, false_alarm, max_time_over, max_time_rate;
 }; 
@@ -67,26 +54,18 @@ class HazardMgr : public AppCastingMOOSApp
    void postSensorInfoRequest();
    void postHazardSetReport();
 
-   // self made
+   // Self implemented
    void postHazardMessage();
-
-   // TODO: NEW
    void handleClassificationReport(std::string);
-
    void setClassificationStatus(int,bool);
    bool classificationExist(int);
    void updateNewClassification(int,double,bool);
    void updateIncomingClassification(int,double);
-
-   // sorts m_classifications based on probabilities, from smallest to largest
    void sortClassifications(bool);
-
    std::string sortedClassificationsToString();
-
    bool decisionRule(Classification c);
    string createHazardString(Classification c);
    string decideHazards();
-
 
    
  private: // Configuration variables
@@ -114,25 +93,25 @@ class HazardMgr : public AppCastingMOOSApp
    XYPolygon   m_search_region;
    
    double      m_transit_path_width;
+
+   // Self implemented 
    bool m_initiated;
 
-   // self made
    double m_last_msg_sent;       // time since last message
    std::string m_name;           // name of current vehicle
    XYHazardSet m_hazard_sent;    // the set of sent hazards, not add to msg
-
    std::string m_msg;            // stores the hazard message
 
-   // TODO: NEW
-   Penalty m_penalty;
-   double m_max_time;
-   double m_mission_start_time;
-   std::string m_search_region_str;
-   std::vector<Classification> m_classifications;
+   Penalty m_penalty;            // Stores value of penalties
+   double m_max_time;            // Stores specified maximum time
+   double m_mission_start_time;  // Stores time since mission was deployed
+   std::string m_search_region_str; // Search region in shape of a polygon
 
-   string m_classification_msg; 
+   // A vector of Classification object for storing its own Classification reports, and to update probabilities as different Classification reports come in
+   std::vector<Classification> m_classifications; 
 
-   double m_pclass;
+   string m_classification_msg;  
+   double m_pclass;              // Probability of correct classification
 };
 
 #endif 
