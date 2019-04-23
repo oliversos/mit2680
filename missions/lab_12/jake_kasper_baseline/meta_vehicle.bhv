@@ -107,6 +107,7 @@ Behavior = BHV_Waypoint
 	 speed = 2
 
 #ifdef VNAME VNAME1
+
 	points = format=lawnmower,label=jakesearch,x=125,y=-245,height=325,width=540,lane_width=30,rows=east-west,startx=0,starty=0
   visual_hints = vertex_color=yellow, edge_color=green
 
@@ -138,12 +139,14 @@ Behavior = BHV_Waypoint
 
 
 #ifdef VNAME VNAME1
+
 points=format=lawnmower,label=kaspersearch,x=125,y=-235,height=295,width=540,lane_width=30,rows=east-west,startx=0,starty=0,degs=0
   visual_hints = vertex_color=yellow, edge_color=gray25
 
 #elseifdef VNAME VNAME2
 points=format=lawnmower,label=kaspersearch,x=125,y=-240,height=295,width=540,lane_width=30,rows=east-west,startx=0,starty=0,degs=0
   visual_hints = vertex_color=yellow, edge_color=gray25
+
 #endif
 
        endflag = SURVEY_2 = false
