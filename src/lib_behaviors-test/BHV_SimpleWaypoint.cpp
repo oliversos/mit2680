@@ -64,6 +64,7 @@ bool BHV_SimpleWaypoint::setParam(string param, string val)
   param = tolower(param);
 
   double double_val = atof(val.c_str());
+  
   if((param == "ptx")  && (isNumber(val))) {
     m_nextpt.set_vx(double_val);
     return(true);
