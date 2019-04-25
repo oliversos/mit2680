@@ -12,6 +12,7 @@ missions/*
 !missions/lab_09/
 !missions/lab_12/
 !missions/lab_13/
+!missions/lab_14/
 missions/alder/*
 !missions/alder/alder_lab4.moos
 !missions/alder/alder_lab4.bhv
@@ -23,6 +24,7 @@ src/*
 !src/pPointAssign/
 !src/pGenPath/
 !src/uFldHazardMgrX/
+!src/lib_behaviors-test/
 
 
 scripts/
