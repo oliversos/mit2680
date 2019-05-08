@@ -167,7 +167,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
       postMessage("AVERAGE_TEMP",m_middle_temp);
       postMessage("CURR_TEMP",new_m.t);
       postMessage("DIFFERENCE",new_m.t - m_middle_temp);
-      if (abs(new_m.t - m_middle_temp) < 2.0){      
+      if (abs(new_m.t - m_middle_temp) < 3.0){      
         if (m_cold_top){
           postMessage("COLD_DIR",-1);
         }
@@ -233,7 +233,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
   if (!m_initiated_heading || m_finish_turn){
     crs_zaic.setSummit(m_init_heading);
     crs_zaic.setPeakWidth(0);
-    crs_zaic.setBaseWidth(180.0); bool m_prepare_finish;
+    crs_zaic.setBaseWidth(180.0); 
     crs_zaic.setSummitDelta(0);  
     crs_zaic.setValueWrap(true);
     if(crs_zaic.stateOK() == false) {
@@ -241,7 +241,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
         postWMessage(warnings);
         return(0);
     }
-    if (abs(heading - m_init_heading) < 1.0){
+    if (abs(heading - m_init_heading) < 0.5){
       m_initiated_heading = true;
       if (m_finish_turn){
         postMessage("CIRCLE","false");
@@ -253,6 +253,8 @@ IvPFunction* BHV_CircleSearch::onRunState()
     double new_heading;
     if (m_clockwise == true){
       new_heading = heading + m_delta_heading;
+      postMessage("HER","JA");
+      postMessage("DELTA_HEADING",m_delta_heading);
       postMessage("NEW_HEADING",new_heading);
     }
     else{

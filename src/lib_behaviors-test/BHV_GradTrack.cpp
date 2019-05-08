@@ -150,51 +150,47 @@ void BHV_GradTrack::onRunToIdleState()
 IvPFunction* BHV_GradTrack::onRunState()
 {
   // Build the IvP functions that represents no objective function and an objective function defined through ZAIC. See buildFunctionWithZAIC()
-  IvPFunction *ipf = 0;
-  if(ipf)
-    ipf->setPWT(m_priority_wt);
-
-  /*
-  IvPFunction *ivpf = 0;
-  ivpf = buildFunctionWithZAIC();
-  if(ivpf == 0) 
-    postWMessage("Problem Creating the IvP Function");
-  if(ivpf)
-  
-
-  ivpf->setPWT(m_priority_wt);
-  */
-
   // Vehicle params from InfoBuffer. Post warning if problem is encountered
+
   bool oknx,okny,oknh,okwpti,oktemp,oktempavg,okgrad,okcold,okstart;
   m_nav_x = getBufferDoubleVal("NAV_X", oknx);
   m_nav_y = getBufferDoubleVal("NAV_Y", okny);
   m_nav_h = getBufferDoubleVal("NAV_HEADING", oknh);
   m_global_temp_avg = getBufferDoubleVal("AVERAGE_TEMP",oktempavg);
+
+  postMessage("AVG_TEMP",m_global_temp_avg);
+
   m_global_front_gradient = getBufferDoubleVal("FRONT_GRADIENT",okgrad);
   double cold_direction = getBufferDoubleVal("COLD_DIR",okcold);
   string measurement = getBufferStringVal("UCTD_MSMNT_REPORT", oktemp);
 
   double timeSinceTempReading = getBufferTimeVal("UCTD_MSMNT_REPORT"); 
 
+  IvPFunction *ipf = 0;
+  ZAIC_PEAK crs_zaic(m_domain,"course");
 
   if(okcold){
     m_cold_direction = cold_direction; // 1 if cold is north, -1 if south
   }
+
   postMessage("M_COLD",m_cold_direction);
 
+  double heading = m_nav_h;
 
   if(oktemp){
     double temp = measurementToTemp(measurement);
     postMessage("TEMP_INSERT",temp);
 
-    m_last_temps.insert(m_last_temps.begin(),temp); // also returns an iterator to the new 'begin'
-
-    // TODO: only call this function if we have a certain amount of measurements, since there is no average with to few measurements. Maybe start by adding the max and min temp found from another behaviour?
-    if (timeSinceTempReading == 0){
-      followGradient();
-      m_last_update = getBufferCurrTime();
+    //m_last_temps.insert(m_last_temps.begin(),temp); // also returns an iterator to the new 'begin'
+    double delta_heading;
+    if (temp > m_global_temp_avg){
+      delta_heading = 10*m_cold_direction;
     }
+    else{
+      delta_heading = -10*m_cold_direction;
+    }
+    heading += delta_heading;
+    postMessage("NEW_HEADING",heading);
   }
 
   if(!oknx || !okny || !oknh) {
@@ -202,17 +198,21 @@ IvPFunction* BHV_GradTrack::onRunState()
     return(0);
   }
 
-  /* // Examples on updating based on curr time and last time to hit info buff
-  double timeSinceWptUpdate = getBufferTimeVal("FOO"); // Always 0 or Appstick
-  double timeSinceZigLeg    = getBufferCurrTime() - m_zigleg_time;
-  */
+  crs_zaic.setSummit(heading);
+  crs_zaic.setPeakWidth(0);
+  crs_zaic.setBaseWidth(180.0);
+  crs_zaic.setSummitDelta(0);  
+  crs_zaic.setValueWrap(true);
+  if(crs_zaic.stateOK() == false) {
+      string warnings = "Course ZAIC problems " + crs_zaic.getWarnings();
+      postWMessage(warnings);
+      return(0);
+  }
 
-  // Decide which objective function to returned based on decision parameter
-  // Keep this parameter to be able to use zigleg behaviour in case we get stuck on a wave
-  /*
-  if(m_objective_function){
-    return(ivpf);
-  }*/
+  ipf = crs_zaic.extractIvPFunction();
+
+  if(ipf)
+    ipf->setPWT(m_priority_wt);
 
   return(ipf);
 }

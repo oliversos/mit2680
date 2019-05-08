@@ -63,26 +63,6 @@ Behavior = BHV_GradTrack
   updates = GRADTRACK_UPDATES
 }
 
-//-----------------------------------------------
-Behavior = BHV_ConstantHeading
-{
- // General Behavior Parameters
- // ---------------------------
- name         = const_hdg            
- pwt          = 100                  
- condition    = MODE==TRACKING    
- updates      = CONST_HDG_UPDATES    
-
- // Parameters specific to this behavior
- // ------------------------------------
-            basewidth = 10           
-             duration = no-time-limit 
-              heading = 145           
- heading_mismatch_var = HDG_DIFF     
-            peakwidth = 10           
-          summitdelta = 25           
-}
-
 Behavior = BHV_ConstantSpeed
 {
   name      = const_spd
