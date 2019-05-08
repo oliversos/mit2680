@@ -17,11 +17,11 @@ using namespace std;
 //---------------------------------------------------------------
 // Constructor
 
-BHV_ZigLeg::BHV_ZigLeg(IvPDomain domain) :
+BHV_ZigLeg::BHV_ZigLeg(IvPDomain domain):
   IvPBehavior(domain)
 {
   // Provide a default behavior name
-  IvPBehavior::setParam("name", "defaultname");
+  IvPBehavior::setParam("name", "zigleg");
 
   // Declare the behavior decision space
   m_domain = subDomain(m_domain, "course,speed");
