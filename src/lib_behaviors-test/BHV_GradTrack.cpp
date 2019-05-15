@@ -12,6 +12,7 @@
 #include "BHV_GradTrack.h"
 #include "ZAIC_PEAK.h"
 #include "OF_Coupler.h"
+#include <math.h>
 
 #include "XYRangePulse.h" // for XYRangePulse 
 
@@ -230,7 +231,7 @@ IvPFunction* BHV_GradTrack::onRunState()
     else{
       heading = 90;
     }
-    if (abs(m_nav_h - heading) < 5 && (m_nav_x < 150 && m_nav_x > -40)){
+    if (fabs(m_nav_h - heading) < 5 && (m_nav_x < 150 && m_nav_x > -40)){
       m_change_direction = false;
       m_cold_direction = - m_cold_direction;
     }
