@@ -45,7 +45,7 @@ Behavior = BHV_CircleSearch
   condition    = MODE == CIRCLING
   perpetual    = true
   updates      = CIRCLE_UPDATES
-  duration     = 500
+  duration     = 1000
   endflag      = CIRCLE = false
   endflag      = TRACK = true
   init_heading = 90
@@ -68,13 +68,16 @@ Behavior = BHV_ConstantSpeed
   name      = const_spd
   pwt       = 100
   condition = MODE == SURVEYING
+  activeflag = SURVEY_UNDERWAY = true
+  inactiveflag = SURVEY_UNDERWAY = false
   
-  duration  = 500
+  duration  = 1000
   speed     = 2
   speed_mismatch_var = SPEED_DIFF
   basewidth = 0.2 
   peakwidth = 0  
   summitdelta = 0 
+
 }
 
 //----------------------------------------------

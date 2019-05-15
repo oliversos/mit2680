@@ -25,12 +25,12 @@ Processconfig = ANTLER
   Run = uFldMessageHandler @ NewConsole = false
   
   Run = uTimerScript       @ NewConsole = false
-  Run = pFrontEstimate     @ NewConsole = false
+  Run = pFrontEstimateX     @ NewConsole = false
   Run = pBasicContactMgr   @ NewConsole = false
 
 }
 
-#include plug_pFrontEstimate.moos
+#include plug_pFrontEstimateX.moos
 #include plug_uTimerScript.moos  
 #include plug_uFldNodeBroker.moos
 #include plug_pShare.moos

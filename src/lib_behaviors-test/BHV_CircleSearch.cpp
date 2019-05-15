@@ -36,6 +36,7 @@ BHV_CircleSearch::BHV_CircleSearch(IvPDomain domain) :
   m_cold_top = false;
   m_finish_turn = false;
   m_middle_temp = 0.;
+  m_temp_diff = 0.;
 
   // Add any variables this behavior needs to subscribe for
   addInfoVars("NAV_X, NAV_Y, NAV_HEADING, UCTD_MSMNT_REPORT,NAV_SPEED,VNAME");
@@ -165,6 +166,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
 
     if (m_prepare_finish && !m_finish_turn){
       postMessage("AVERAGE_TEMP",m_middle_temp);
+      postMessage("TEMP_DIFF",m_temp_diff);
       postMessage("CURR_TEMP",new_m.t);
       postMessage("DIFFERENCE",new_m.t - m_middle_temp);
       if (abs(new_m.t - m_middle_temp) < 3.0){      
@@ -181,7 +183,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
 
   if ((getBufferCurrTime() - m_start_time > 170) && !m_prepare_finish){
     postMessage("BUFFTIME",getBufferCurrTime());
-    postMessage("STARTTIME",m_start_time);
+    postMessage("START_TIME",m_start_time);
     m_prepare_finish = true;
     double top_temp = -1000;
     double min_temp = 1000;
@@ -199,6 +201,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
       }
     }
     m_middle_temp = (top_temp + min_temp)/2.;
+    m_temp_diff = top_temp - min_temp;
     if (top_y > min_y){
       m_cold_top = false;
     }
@@ -209,6 +212,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
 
   if (m_delta_heading == 0.){
     m_delta_heading = 700/m_radius;
+    postMessage("DELTA_H",m_delta_heading);
   }
   // Part 1: Build the IvP function
   IvPFunction *ipf = 0;
@@ -220,10 +224,12 @@ IvPFunction* BHV_CircleSearch::onRunState()
       return(0);
   }
 
-  bool h; bool i;
+  bool h; bool i; bool j;
 
   double heading = getBufferDoubleVal("NAV_HEADING",h);
   double speed = getBufferDoubleVal("NAV_SPEED",i);
+  double nav_x = getBufferDoubleVal("NAV_X",j);
+
 
   if (!h || !i){
     return (0);
@@ -232,7 +238,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
 
   if (!m_initiated_heading || m_finish_turn){
     crs_zaic.setSummit(m_init_heading);
-    crs_zaic.setPeakWidth(0);
+    crs_zaic.setPeakWidth(3.);
     crs_zaic.setBaseWidth(180.0); 
     crs_zaic.setSummitDelta(0);  
     crs_zaic.setValueWrap(true);
@@ -241,8 +247,10 @@ IvPFunction* BHV_CircleSearch::onRunState()
         postWMessage(warnings);
         return(0);
     }
-    if (abs(heading - m_init_heading) < 0.5){
-      m_initiated_heading = true;
+    postMessage("HEADING_DIFF",abs(heading - m_init_heading));
+    if (abs(heading - m_init_heading) < 9.){
+      if (nav_x > 35.)
+        m_initiated_heading = true;
       if (m_finish_turn){
         postMessage("CIRCLE","false");
         postMessage("TRACK","true");

@@ -28,6 +28,9 @@ public:
   void         postConfigStatus();
   void         onRunToIdleState();
   void         onIdleToRunState();
+  void         handleAddName(string s);
+  bool         testMeasurement(Measurement m);
+  string       measurementToString(Measurement m);
   Measurement  stringToMeasurement(string m);
   IvPFunction* onRunState();
 
@@ -36,6 +39,7 @@ protected: // Local Utility functions
 protected: // Configuration parameters
   double m_radius;
   double m_middle_temp;
+  double m_temp_diff;
   bool m_cold_top; //Send -1 for cold top, 1 for cold bot
   double m_init_heading;
   bool m_initiated_heading;
@@ -45,6 +49,9 @@ protected: // Configuration parameters
   double m_delta_heading;
   double m_last_sample_time;
   double m_start_time;
+  double m_last_message_time;
+  string m_name;
+  string m_last_report;
   vector<Measurement> m_measurements;
 
 protected: // State variables

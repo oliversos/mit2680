@@ -1,4 +1,4 @@
-ProcessConfig = pFrontEstimate
+ProcessConfig = pFrontEstimateX
 {
   AppTick    = 4
   CommsTick  = 4
@@ -22,8 +22,8 @@ ProcessConfig = pFrontEstimate
   //min_alpha = 200
   //max_alpha = 500
 
-  min_alpha = 300
-  max_alpha = 800
+  min_alpha = 350
+  max_alpha = 350
 
   min_beta = 10
   max_beta = 50

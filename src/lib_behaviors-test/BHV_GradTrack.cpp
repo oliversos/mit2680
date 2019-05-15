@@ -37,7 +37,10 @@ BHV_GradTrack::BHV_GradTrack(IvPDomain domain) :
   addInfoVars("FRONT_GRADIENT","no_warning");
   addInfoVars("UCTD_MSMNT_REPORT","no_warning");
   addInfoVars("AVERAGE_TEMP","no_warning");
-
+  addInfoVars("TEMP_DIFF","no_warning");
+  addInfoVars("START_TIME","no_warning");
+  addInfoVars("MSMNT_REPORT","no_warning");
+  postMessage("CONCURRENT","true");
 
   // TODO: Initialize all member variables
   m_nav_x = 0;
@@ -47,15 +50,25 @@ BHV_GradTrack::BHV_GradTrack(IvPDomain domain) :
   m_temp_threshold = 0.5; // TODO: Check this size from runs
   m_measured_temp_avg = 20;
   m_global_temp_avg = 20;
+  m_last_temp = -100.;
+  m_current_temp = -100;
   m_global_front_gradient = 0.0; // assumed to be angle in radians, moving in in x,y coordsyst
+  m_gradient_heading = 0.;
   m_cold_direction = -1; // initialized to give left turn if sailing east
   m_turn_rate = 1;
   m_started = false;
   m_last_update = getBufferCurrTime();
 
   m_priority_wt = 100;
+  m_start_time = 0;
 
   m_objective_function = false;
+  m_change_direction = false;
+  m_cold_initiated = false;
+  m_drive_east = true;
+
+  m_last_message_time = getBufferCurrTime();
+  m_last_report = "";
 }
 
 //---------------------------------------------------------------
@@ -149,14 +162,34 @@ void BHV_GradTrack::onRunToIdleState()
 
 IvPFunction* BHV_GradTrack::onRunState()
 {
+	if (m_start_time == 0.){
+		bool okstart;
+		double start = getBufferDoubleVal("START_TIME",okstart);
+		if (okstart){
+			m_start_time = start;
+			postMessage("START_TIME",m_start_time);
+		}
+	}
+
+	if (getBufferCurrTime() - m_start_time >  460.){
+		postMessage("RETURN","true");
+	}
   // Build the IvP functions that represents no objective function and an objective function defined through ZAIC. See buildFunctionWithZAIC()
   // Vehicle params from InfoBuffer. Post warning if problem is encountered
 
-  bool oknx,okny,oknh,okwpti,oktemp,oktempavg,okgrad,okcold,okstart;
+  bool oknx,okny,oknh,okwpti,oktemp,oktempavg,okgrad,okcold,okstart,okdiff;
   m_nav_x = getBufferDoubleVal("NAV_X", oknx);
   m_nav_y = getBufferDoubleVal("NAV_Y", okny);
   m_nav_h = getBufferDoubleVal("NAV_HEADING", oknh);
   m_global_temp_avg = getBufferDoubleVal("AVERAGE_TEMP",oktempavg);
+  m_temp_diff = getBufferDoubleVal("TEMP_DIFF",okdiff);
+
+  if ((m_nav_x > 150 || m_nav_x < -40) && !m_change_direction) {
+    m_change_direction = true;
+    m_drive_east = !m_drive_east;
+    postMessage("TURN_X",m_nav_x);
+    postMessage("DRIVE_EAST",m_drive_east);
+  }
 
   postMessage("AVG_TEMP",m_global_temp_avg);
 
@@ -166,31 +199,89 @@ IvPFunction* BHV_GradTrack::onRunState()
 
   double timeSinceTempReading = getBufferTimeVal("UCTD_MSMNT_REPORT"); 
 
+  if (timeSinceTempReading == 0.){
+    Measurement new_m = stringToMeasurement(measurement);
+    postMessage("TEMP_REP",measurement);
+    if (testMeasurement(new_m)){
+      string sending_msg;
+      sending_msg += "src_node=" + m_us_name;
+      sending_msg += ",dest_node=all";
+      sending_msg += ",var_name=MSMNT_REPORT";
+      sending_msg += ",string_val=";
+      sending_msg += measurement;
+      postMessage("NODE_MESSAGE_LOCAL",sending_msg);
+    }
+  }
+
   IvPFunction *ipf = 0;
   ZAIC_PEAK crs_zaic(m_domain,"course");
 
-  if(okcold){
+  if(okcold && !m_cold_initiated){
     m_cold_direction = cold_direction; // 1 if cold is north, -1 if south
+    m_cold_initiated = true;
   }
-
-  postMessage("M_COLD",m_cold_direction);
 
   double heading = m_nav_h;
 
-  if(oktemp){
-    double temp = measurementToTemp(measurement);
-    postMessage("TEMP_INSERT",temp);
-
-    //m_last_temps.insert(m_last_temps.begin(),temp); // also returns an iterator to the new 'begin'
-    double delta_heading;
-    if (temp > m_global_temp_avg){
-      delta_heading = 10*m_cold_direction;
+  if (m_change_direction){
+    if (m_nav_x > 50){
+      heading = 270;
     }
     else{
-      delta_heading = -10*m_cold_direction;
+      heading = 90;
     }
-    heading += delta_heading;
-    postMessage("NEW_HEADING",heading);
+    if (abs(m_nav_h - heading) < 5 && (m_nav_x < 150 && m_nav_x > -40)){
+      m_change_direction = false;
+      m_cold_direction = - m_cold_direction;
+    }
+  }
+
+  else if(oktemp){
+    double temp = measurementToTemp(measurement);
+    if (m_last_temp == -100.){
+      m_current_temp = temp;
+      m_last_temp = temp;
+    }
+    if (m_current_temp != temp){
+    	m_last_temp = m_current_temp;
+    	m_current_temp = temp;
+    }
+
+    double delta_heading_prop = 0;
+
+    delta_heading_prop = (temp - m_global_temp_avg)*(180/m_temp_diff)*m_cold_direction;
+
+    double delta_heading_deriv = (m_current_temp - m_last_temp)*(120/m_temp_diff)*m_cold_direction;
+
+    postMessage("CURR_TEMP",m_current_temp);
+    postMessage("LAST_TEMP",m_last_temp);
+    postMessage("DELTA_PROP",delta_heading_prop);
+    postMessage("DELTA_DER",delta_heading_deriv);
+
+    heading += delta_heading_prop;
+    heading += delta_heading_deriv;
+  }
+
+
+
+
+
+  if (!m_change_direction && m_drive_east ){
+    if (m_nav_h > 170){
+      heading = 160;
+    }
+    if (m_nav_h < 10){
+      heading = 20;
+    }
+  }
+
+  if (!m_change_direction && !m_drive_east){
+    if (m_nav_h > 345){
+      heading = 335;
+    }
+    if (m_nav_h < 195){
+      heading = 205;
+    }
   }
 
   if(!oknx || !okny || !oknh) {
@@ -232,78 +323,38 @@ double BHV_GradTrack::measurementToTemp(string m){
   return(std::stod(t));// stod is from the string library
 }
 
-void BHV_GradTrack::followGradient(){
-  // Idea: follow gradient of the front by always adjusting by measured temp
-  
-  // TODO:To avoid getting stuck on riding the wave, the speed can be changed randomly, or one could measure the time since last direction change, and make the vessel to a change in heading
 
-  double turn = 1; // set to zero if no turn 
-  int turn_direction = -1; // the same as cold north
 
-  // We are using the global temp average
-  if(m_last_temps.size() > 0){
-    if(m_last_temps[0] > m_global_temp_avg + m_temp_threshold){
-      // turn towards colder. if vehicle sails towards east, it means decreasing heading
-      if(m_nav_h >= 0 && m_nav_h <= 180){
-        // we are sailing east, so we want to reduce angle. if cold is north, m_cold_direction should be -1. If not, the we turn
-        turn_direction = -m_cold_direction;
-      }
-      else{
-        turn_direction = m_cold_direction;
-      }
-    }
-    else if (m_last_temps[0] < m_global_temp_avg - m_temp_threshold) {
-      // turn toward warmer
-      if(m_nav_h >= 0 && m_nav_h <= 180){
-        // we are sailing east. if cold is north, we want to turn the opposite way of m_cold_direction. E.g. if cold is north, then m_cold_direction is -1, and we want to increase angle -> -(m_cold_direction) 
-        turn_direction = m_cold_direction;
-      }
-      else{
-        turn_direction = -m_cold_direction;
-      }
-    } 
-    else{
-      turn = 0;
-      // TODO: Maybe just return here so that CONST_HDG_UPDATES don't get spammed to much at each onRunState? 
-    } 
-    double change = turn * turn_direction * m_turn_rate;
-    postTurnDir(change);
-    postMessage("CONST_HDG_UPDATES", "heading=" + to_string(m_nav_h+change));
-  } // more than 0 measurements  
-} // func
-
-// takes in a change in heading direction and posts a variable that indicates if the vehicle should turn right, left or none
-void BHV_GradTrack::postTurnDir(double change){
-  
-  string outstring;
-  if(change == 0){
-    outstring = "TURN_NONE";
-  }
-  else if(change < 0){
-    outstring = "TURN_LEFT";
-  }
-  else{
-    outstring = "TURN_RIGHT";
-  }
-  postMessage("TEST_TURN", outstring);
+bool BHV_GradTrack::testMeasurement(Measurement m){
+  double max = m_global_temp_avg + m_temp_diff/4.;
+  double min = m_global_temp_avg - m_temp_diff/4.;
+  if (m.t < max && m.t > min){
+    return true;
+  } 
+  return false;
 }
 
-//-----------------------------------------------------------
-// Procedure: updateTempAvg()
-void BHV_GradTrack::updateTempAvg(){
-  double noOfTemps = m_last_temps.size();
-  if(noOfTemps == 0){
-    postWMessage("updateTempAvg(): No average can be found from empty list");
-    return;
-  }
-  else {
-    double tempSum = 0;
-    for(vector<double>::iterator it = m_last_temps.begin(); it != m_last_temps.end(); it++){
-      tempSum += (*it);
-    }
-    m_measured_temp_avg = tempSum / (noOfTemps);
-  }
+Measurement BHV_GradTrack::stringToMeasurement(string m){
+
+  // String will be like:
+  // "vname=v_name,utc=XXX.0,x=123.2,y=412.2,temp=22.34"
+
+  // TODO: Test to see if the four former parses is necessary
+  string a = tokStringParse(m, "vname", ',', '=');
+  string b = tokStringParse(m, "utc", ',', '=');
+  string c = tokStringParse(m, "x", ',', '=');
+  string d = tokStringParse(m, "y", ',', '=');
+  string t = tokStringParse(m, "temp", ',', '=');
+
+  double x = stod(c);
+  double y = stod(d);
+  double temp = stod(t);
+
+  Measurement measure = {x,y,temp};
+  // return temperature as a double
+  return(measure);// stod is from the string library
 }
+
 
 //-----------------------------------------------------------
 // Procedure: buildFunctionWithZAIC
