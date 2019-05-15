@@ -26,6 +26,7 @@ src/*
 !src/pGenPath/
 !src/uFldHazardMgrX/
 !src/lib_behaviors-test/
+!src/pFrontEstimate/
 
 
 scripts/
