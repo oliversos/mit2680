@@ -11,6 +11,7 @@
 #include "BuildUtils.h"
 #include "BHV_CircleSearch.h"
 #include "ZAIC_PEAK.h"
+#include <math.h>
 
 using namespace std;
 
@@ -169,7 +170,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
       postMessage("TEMP_DIFF",m_temp_diff);
       postMessage("CURR_TEMP",new_m.t);
       postMessage("DIFFERENCE",new_m.t - m_middle_temp);
-      if (abs(new_m.t - m_middle_temp) < 3.0){      
+      if (fabs(new_m.t - m_middle_temp) < 3.0){      
         if (m_cold_top){
           postMessage("COLD_DIR",-1);
         }
@@ -247,8 +248,8 @@ IvPFunction* BHV_CircleSearch::onRunState()
         postWMessage(warnings);
         return(0);
     }
-    postMessage("HEADING_DIFF",abs(heading - m_init_heading));
-    if (abs(heading - m_init_heading) < 9.){
+    postMessage("HEADING_DIFF",fabs(heading - m_init_heading));
+    if (fabs(heading - m_init_heading) < 9.){
       if (nav_x > 35.)
         m_initiated_heading = true;
       if (m_finish_turn){
