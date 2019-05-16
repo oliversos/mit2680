@@ -93,7 +93,8 @@ nsplug meta_vehicle.moos targ_$VNAME1.moos -f WARP=$TIME_WARP  \
    VNAME=$VNAME1      START_POS=$START_POS1                    \
    VPORT="9001"       SHARE_LISTEN="9301"                      \
    VTYPE=KAYAK          COOL_FAC=$COOL_FAC  COOL_STEPS=$COOL_STEPS\
-   CONCURRENT=$CONCURRENT  ADAPTIVE=$ADAPTIVE
+   CONCURRENT=$CONCURRENT  ADAPTIVE=$ADAPTIVE 
+   
 
 nsplug meta_vehicle.bhv targ_$VNAME1.bhv -f VNAME=$VNAME1      \
     START_POS=$START_POS1 SURVEY_X=$SURVEY_X SURVEY_Y=$SURVEY_Y \
