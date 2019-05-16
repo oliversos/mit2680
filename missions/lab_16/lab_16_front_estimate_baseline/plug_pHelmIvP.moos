@@ -5,7 +5,8 @@ ProcessConfig = pHelmIvP
 {
   AppTick    = 2
   CommsTick  = 2
-  
+
+  ivp_behavior_dir = /home/student2680/mit2680/lib  
   Behaviors    = targ_$(VNAME).bhv  
   Verbose      = false
   Domain       = course:0:359:360

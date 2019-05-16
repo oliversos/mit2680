@@ -40,7 +40,7 @@ BHV_CircleSearch::BHV_CircleSearch(IvPDomain domain) :
   m_temp_diff = 0.;
 
   // Add any variables this behavior needs to subscribe for
-  addInfoVars("NAV_X, NAV_Y, NAV_HEADING, UCTD_MSMNT_REPORT,NAV_SPEED,VNAME");
+  addInfoVars("NAV_X, NAV_Y, NAV_HEADING,UCTD_MSMNT_REPORT, NAV_SPEED,VNAME");
   postMessage("CONCURRENT","false");
 }
 
@@ -155,6 +155,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
     m_start_time = getBufferCurrTime();
   }
 
+  
   if (getBufferCurrTime() - m_last_sample_time > 1.){
     bool t_report;
     string temp_report = getBufferStringVal("UCTD_MSMNT_REPORT",t_report);
@@ -181,6 +182,7 @@ IvPFunction* BHV_CircleSearch::onRunState()
       }
     }
   }
+
 
   if ((getBufferCurrTime() - m_start_time > 170) && !m_prepare_finish){
     postMessage("BUFFTIME",getBufferCurrTime());

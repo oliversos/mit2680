@@ -25,14 +25,12 @@ Processconfig = ANTLER
   Run = uFldCTDSensor       @ NewConsole = false
   Run = pFrontGridRender    @ NewConsole = false
   Run = pGradeFrontEstimate @ NewConsole = false
-  Run = uTimerScript        @ NewConsole = false
 }
 
 //#include plug_uFldCTDSensor.moos
 #include plug_uFldCTDSensor_3.moos
 #include plug_pHostInfo.moos
 #include plug_pLogger.moos
-#include plug_uTimerScript.moos
 //-------------------------
 -------------------------
 // pGradeFrontEstiamte Configuration Block
